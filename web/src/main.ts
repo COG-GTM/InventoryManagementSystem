@@ -1,21 +1,20 @@
 import './style.css';
 import {
-  Inventory,
   Part,
+  PartPayload,
   Product,
-  companyOrMachine,
-  searchParts,
-  searchProducts,
-  validateItem,
+  ProductPayload,
   FieldValues,
+  companyOrMachine,
+  validateItem,
+  partsApi,
+  productsApi,
 } from './model';
 
-const inv = new Inventory();
-
-// Currently displayed (possibly filtered) rows + selection, mirroring the
-// two DataGridViews on MainScreen.
-let partsView: Part[] = inv.allParts;
-let productsView: Product[] = inv.products;
+let allParts: Part[] = [];
+let allProducts: Product[] = [];
+let partsView: Part[] = [];
+let productsView: Product[] = [];
 let selectedPartId: number | null = null;
 let selectedProductId: number | null = null;
 
@@ -35,9 +34,18 @@ function el<K extends keyof HTMLElementTagNameMap>(
   return node;
 }
 
+async function refresh(): Promise<void> {
+  try {
+    [allParts, allProducts] = await Promise.all([partsApi.list(), productsApi.list()]);
+    partsView = allParts;
+    productsView = allProducts;
+    render();
+  } catch (err) {
+    alert(err instanceof Error ? err.message : 'Failed to load inventory.');
+  }
+}
+
 function render(): void {
-  partsView = inv.allParts;
-  productsView = inv.products;
   app.replaceChildren(header(), panels());
 }
 
@@ -58,16 +66,17 @@ function panels(): HTMLElement {
 // ---- Parts panel ----------------------------------------------------------
 function partsPanel(): HTMLElement {
   const searchInput = el('input', { type: 'text', placeholder: 'Search parts…' });
-  const runSearch = () => {
-    const result = searchParts(inv.allParts, searchInput.value);
-    if (searchInput.value.trim() !== '' && result.length === 0) {
+  const runSearch = async () => {
+    const term = searchInput.value.trim();
+    const result = await partsApi.list(term || undefined);
+    if (term !== '' && result.length === 0) {
       alert('Nothing found.');
-      partsView = inv.allParts;
+      partsView = allParts;
     } else {
       partsView = result;
     }
     selectedPartId = null;
-    app.replaceChildren(header(), panels());
+    render();
     (document.querySelector('.panels .panel input') as HTMLInputElement)?.focus();
   };
   searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') runSearch(); });
@@ -113,42 +122,51 @@ function partsBody(): HTMLElement {
     ]);
     tr.addEventListener('click', () => {
       selectedPartId = p.partId;
-      app.replaceChildren(header(), panels());
+      render();
     });
     body.append(tr);
   }
   return body;
 }
 
-function modifyPart(): void {
-  const part = selectedPartId != null ? inv.lookupPart(selectedPartId) : null;
-  if (!part) { alert('Nothing Selected! Please make a selection.'); return; }
-  openPartModal('modify', part);
+async function modifyPart(): Promise<void> {
+  if (selectedPartId == null) { alert('Nothing Selected! Please make a selection.'); return; }
+  try {
+    const part = await partsApi.get(selectedPartId);
+    openPartModal('modify', part);
+  } catch (err) {
+    alert(err instanceof Error ? err.message : 'Failed to load part.');
+  }
 }
 
-function deletePart(): void {
-  const part = selectedPartId != null ? inv.lookupPart(selectedPartId) : null;
-  if (!part) { alert('Nothing Selected! Please make a selection.'); return; }
-  if (confirm('Are You Sure?')) {
-    inv.deletePart(part);
-    selectedPartId = null;
-    render();
+async function deletePart(): Promise<void> {
+  if (selectedPartId == null) { alert('Nothing Selected! Please make a selection.'); return; }
+  try {
+    const part = await partsApi.get(selectedPartId);
+    if (confirm('Are You Sure?')) {
+      await partsApi.remove(part.partId);
+      selectedPartId = null;
+      await refresh();
+    }
+  } catch (err) {
+    alert(err instanceof Error ? err.message : 'Failed to delete part.');
   }
 }
 
 // ---- Products panel -------------------------------------------------------
 function productsPanel(): HTMLElement {
   const searchInput = el('input', { type: 'text', placeholder: 'Search products…' });
-  const runSearch = () => {
-    const result = searchProducts(inv.products, searchInput.value);
-    if (searchInput.value.trim() !== '' && result.length === 0) {
+  const runSearch = async () => {
+    const term = searchInput.value.trim();
+    const result = await productsApi.list(term || undefined);
+    if (term !== '' && result.length === 0) {
       alert('Nothing found.');
-      productsView = inv.products;
+      productsView = allProducts;
     } else {
       productsView = result;
     }
     selectedProductId = null;
-    app.replaceChildren(header(), panels());
+    render();
   };
   searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') runSearch(); });
 
@@ -190,30 +208,38 @@ function productsBody(): HTMLElement {
     ]);
     tr.addEventListener('click', () => {
       selectedProductId = p.productId;
-      app.replaceChildren(header(), panels());
+      render();
     });
     body.append(tr);
   }
   return body;
 }
 
-function modifyProduct(): void {
-  const product = selectedProductId != null ? inv.lookupProduct(selectedProductId) : null;
-  if (!product) { alert('Nothing Selected! Please make a selection.'); return; }
-  openProductModal('modify', product);
+async function modifyProduct(): Promise<void> {
+  if (selectedProductId == null) { alert('Nothing Selected! Please make a selection.'); return; }
+  try {
+    const product = await productsApi.get(selectedProductId);
+    openProductModal('modify', product);
+  } catch (err) {
+    alert(err instanceof Error ? err.message : 'Failed to load product.');
+  }
 }
 
-function deleteProduct(): void {
-  const product = selectedProductId != null ? inv.lookupProduct(selectedProductId) : null;
-  if (!product) { alert('Nothing Selected! Please make a selection.'); return; }
-  if (product.associatedParts.length !== 0) {
-    alert('Sorry! Unable to delete product with any parts associated to it. Please modify the product and remove all associated parts to delete this product.');
-    return;
-  }
-  if (confirm('Are You Sure?')) {
-    inv.removeProduct(product);
-    selectedProductId = null;
-    render();
+async function deleteProduct(): Promise<void> {
+  if (selectedProductId == null) { alert('Nothing Selected! Please make a selection.'); return; }
+  try {
+    const product = await productsApi.get(selectedProductId);
+    if (product.associatedParts.length !== 0) {
+      alert('Sorry! Unable to delete product with any parts associated to it. Please modify the product and remove all associated parts to delete this product.');
+      return;
+    }
+    if (confirm('Are You Sure?')) {
+      await productsApi.remove(product.productId);
+      selectedProductId = null;
+      await refresh();
+    }
+  } catch (err) {
+    alert(err instanceof Error ? err.message : 'Failed to delete product.');
   }
 }
 
@@ -256,14 +282,15 @@ function openPartModal(mode: 'add' | 'modify', existing?: Part): void {
 
   const idInput = el('input', {
     type: 'text',
-    value: existing ? String(existing.partId) : String(inv.nextPartId()),
+    value: existing ? String(existing.partId) : '',
+    placeholder: 'Auto',
     readOnly: true,
   });
-  const name = { key: 'name' as const, label: 'Name', input: el('input', { type: 'text', value: existing?.name ?? '' }) };
-  const inventory = { key: 'inventory' as const, label: 'Inventory (In Stock)', input: el('input', { type: 'text', value: existing ? String(existing.inStock) : '' }) };
-  const price = { key: 'price' as const, label: 'Price / Cost', input: el('input', { type: 'text', value: existing ? String(existing.price) : '' }) };
-  const max = { key: 'max' as const, label: 'Max', input: el('input', { type: 'text', value: existing ? String(existing.max) : '' }) };
-  const min = { key: 'min' as const, label: 'Min', input: el('input', { type: 'text', value: existing ? String(existing.min) : '' }) };
+  const name = { label: 'Name', input: el('input', { type: 'text', value: existing?.name ?? '' }) };
+  const inventory = { label: 'Inventory (In Stock)', input: el('input', { type: 'text', value: existing ? String(existing.inStock) : '' }) };
+  const price = { label: 'Price / Cost', input: el('input', { type: 'text', value: existing ? String(existing.price) : '' }) };
+  const max = { label: 'Max', input: el('input', { type: 'text', value: existing ? String(existing.max) : '' }) };
+  const min = { label: 'Min', input: el('input', { type: 'text', value: existing ? String(existing.min) : '' }) };
 
   const variableInput = el('input', {
     type: 'text',
@@ -281,13 +308,67 @@ function openPartModal(mode: 'add' | 'modify', existing?: Part): void {
 
   const errorBox = el('p', { className: 'form-error hidden' });
   const saveBtn = el('button', { className: 'btn-primary', textContent: 'Save' });
+  const inputs = [name.input, inventory.input, price.input, max.input, min.input, variableInput];
 
-  const required = [name.input, inventory.input, price.input, max.input, min.input, variableInput];
-  const refreshSaveEnabled = () => {
-    saveBtn.disabled = required.some((i) => i.value.trim() === '');
+  const validate = (): string | null => {
+    inputs.forEach((i) => i.classList.remove('invalid'));
+    let firstError: string | null = null;
+    const mark = (input: HTMLInputElement, msg: string) => {
+      input.classList.add('invalid');
+      firstError ??= msg;
+    };
+
+    if (name.input.value.trim() === '') mark(name.input, 'Name is required.');
+
+    const priceVal = price.input.value.trim();
+    if (priceVal === '') mark(price.input, 'Price is required.');
+    else {
+      const p = Number(priceVal);
+      if (Number.isNaN(p) || p < 0) mark(price.input, 'Price must be a non-negative number.');
+    }
+
+    const invVal = inventory.input.value.trim();
+    if (invVal === '') mark(inventory.input, 'Inventory is required.');
+    else if (!Number.isInteger(Number(invVal))) mark(inventory.input, 'Inventory must be an integer.');
+
+    const maxVal = max.input.value.trim();
+    if (maxVal === '') mark(max.input, 'Max is required.');
+    else if (!Number.isInteger(Number(maxVal))) mark(max.input, 'Max must be an integer.');
+
+    const minVal = min.input.value.trim();
+    if (minVal === '') mark(min.input, 'Min is required.');
+    else if (!Number.isInteger(Number(minVal))) mark(min.input, 'Min must be an integer.');
+
+    const values: FieldValues = {
+      name: name.input.value,
+      inventory: inventory.input.value,
+      price: price.input.value,
+      max: max.input.value,
+      min: min.input.value,
+    };
+    const itemErr = validateItem(values);
+    if (itemErr) {
+      if (itemErr.includes('Minimum')) { min.input.classList.add('invalid'); max.input.classList.add('invalid'); }
+      if (itemErr.includes('Inventory')) inventory.input.classList.add('invalid');
+      firstError ??= itemErr;
+    }
+
+    if (inhouseRadio.checked) {
+      const mVal = variableInput.value.trim();
+      if (mVal === '') mark(variableInput, 'Machine ID is required.');
+      else if (!Number.isInteger(Number(mVal))) mark(variableInput, 'Machine ID must be an integer.');
+    } else {
+      if (variableInput.value.trim() === '') mark(variableInput, 'Company Name is required.');
+    }
+
+    saveBtn.disabled = !!firstError;
+    return firstError;
   };
-  required.forEach((i) => i.addEventListener('input', refreshSaveEnabled));
-  refreshSaveEnabled();
+
+  inputs.forEach((i) => i.addEventListener('input', validate));
+  inhouseRadio.addEventListener('change', validate);
+  outsourcedRadio.addEventListener('change', validate);
+  validate();
 
   const close = openModal(
     el('div', { className: 'modal' }, [
@@ -317,40 +398,38 @@ function openPartModal(mode: 'add' | 'modify', existing?: Part): void {
     ]),
   );
 
-  saveBtn.onclick = () => {
-    const values: FieldValues = {
-      name: name.input.value,
-      inventory: inventory.input.value,
-      price: price.input.value,
-      max: max.input.value,
-      min: min.input.value,
-    };
-    const err = validateItem(values);
+  saveBtn.onclick = async () => {
+    const err = validate();
     if (err) { errorBox.textContent = err; errorBox.classList.remove('hidden'); return; }
 
     const base = {
-      partId: parseInt(idInput.value, 10),
-      name: values.name,
-      inStock: parseInt(values.inventory, 10),
-      price: parseFloat(values.price),
-      max: parseInt(values.max, 10),
-      min: parseInt(values.min, 10),
+      name: name.input.value.trim(),
+      price: Number(price.input.value.trim()),
+      inStock: parseInt(inventory.input.value.trim(), 10),
+      max: parseInt(max.input.value.trim(), 10),
+      min: parseInt(min.input.value.trim(), 10),
     };
-    const part: Part = inhouseRadio.checked
-      ? { ...base, kind: 'inhouse', machineId: parseInt(variableInput.value, 10) }
-      : { ...base, kind: 'outsourced', companyName: variableInput.value };
+    try {
+      const payload: PartPayload = inhouseRadio.checked
+        ? { ...base, kind: 'inhouse' as const, machineId: parseInt(variableInput.value.trim(), 10) }
+        : { ...base, kind: 'outsourced' as const, companyName: variableInput.value.trim() };
 
-    if (mode === 'add') inv.addPart(part);
-    else inv.updatePart(part.partId, part);
-    close();
-    render();
+      if (mode === 'add') await partsApi.create(payload);
+      else if (existing) await partsApi.update(existing.partId, payload);
+      close();
+      await refresh();
+    } catch (e) {
+      errorBox.textContent = e instanceof Error ? e.message : 'Save failed.';
+      errorBox.classList.remove('hidden');
+    }
   };
 }
 
 function openProductModal(mode: 'add' | 'modify', existing?: Product): void {
   const idInput = el('input', {
     type: 'text',
-    value: existing ? String(existing.productId) : String(inv.nextProductId()),
+    value: existing ? String(existing.productId) : '',
+    placeholder: 'Auto',
     readOnly: true,
   });
   const name = { label: 'Name', input: el('input', { type: 'text', value: existing?.name ?? '' }) };
@@ -361,7 +440,7 @@ function openProductModal(mode: 'add' | 'modify', existing?: Product): void {
 
   // Working copy of associated parts (committed only on Save).
   const assoc: Part[] = existing ? [...existing.associatedParts] : [];
-  let candidateView: Part[] = inv.allParts;
+  let candidateView: Part[] = allParts;
   let selCandidate: number | null = null;
   let selAssoc: number | null = null;
 
@@ -391,11 +470,12 @@ function openProductModal(mode: 'add' | 'modify', existing?: Product): void {
   };
 
   const candSearch = el('input', { type: 'text', placeholder: 'Search parts…' });
-  const runCandSearch = () => {
-    const result = searchParts(inv.allParts, candSearch.value);
-    if (candSearch.value.trim() !== '' && result.length === 0) {
+  const runCandSearch = async () => {
+    const term = candSearch.value.trim();
+    const result = await partsApi.list(term || undefined);
+    if (term !== '' && result.length === 0) {
       alert('Nothing found.');
-      candidateView = inv.allParts;
+      candidateView = allParts;
     } else {
       candidateView = result;
     }
@@ -406,7 +486,7 @@ function openProductModal(mode: 'add' | 'modify', existing?: Product): void {
 
   const addAssoc = () => {
     if (selCandidate == null) { alert('Please select a row.'); return; }
-    const part = inv.lookupPart(selCandidate);
+    const part = candidateView.find((p) => p.partId === selCandidate);
     if (part) { assoc.push(part); renderAssocTables(); }
   };
   const removeAssoc = () => {
@@ -421,10 +501,57 @@ function openProductModal(mode: 'add' | 'modify', existing?: Product): void {
 
   const errorBox = el('p', { className: 'form-error hidden' });
   const saveBtn = el('button', { className: 'btn-primary', textContent: 'Save' });
-  const required = [name.input, inventory.input, price.input, max.input, min.input];
-  const refreshSaveEnabled = () => { saveBtn.disabled = required.some((i) => i.value.trim() === ''); };
-  required.forEach((i) => i.addEventListener('input', refreshSaveEnabled));
-  refreshSaveEnabled();
+  const inputs = [name.input, inventory.input, price.input, max.input, min.input];
+
+  const validate = (): string | null => {
+    inputs.forEach((i) => i.classList.remove('invalid'));
+    let firstError: string | null = null;
+    const mark = (input: HTMLInputElement, msg: string) => {
+      input.classList.add('invalid');
+      firstError ??= msg;
+    };
+
+    if (name.input.value.trim() === '') mark(name.input, 'Name is required.');
+
+    const priceVal = price.input.value.trim();
+    if (priceVal === '') mark(price.input, 'Price is required.');
+    else {
+      const p = Number(priceVal);
+      if (Number.isNaN(p) || p < 0) mark(price.input, 'Price must be a non-negative number.');
+    }
+
+    const invVal = inventory.input.value.trim();
+    if (invVal === '') mark(inventory.input, 'Inventory is required.');
+    else if (!Number.isInteger(Number(invVal))) mark(inventory.input, 'Inventory must be an integer.');
+
+    const maxVal = max.input.value.trim();
+    if (maxVal === '') mark(max.input, 'Max is required.');
+    else if (!Number.isInteger(Number(maxVal))) mark(max.input, 'Max must be an integer.');
+
+    const minVal = min.input.value.trim();
+    if (minVal === '') mark(min.input, 'Min is required.');
+    else if (!Number.isInteger(Number(minVal))) mark(min.input, 'Min must be an integer.');
+
+    const values: FieldValues = {
+      name: name.input.value,
+      inventory: inventory.input.value,
+      price: price.input.value,
+      max: max.input.value,
+      min: min.input.value,
+    };
+    const itemErr = validateItem(values);
+    if (itemErr) {
+      if (itemErr.includes('Minimum')) { min.input.classList.add('invalid'); max.input.classList.add('invalid'); }
+      if (itemErr.includes('Inventory')) inventory.input.classList.add('invalid');
+      firstError ??= itemErr;
+    }
+
+    saveBtn.disabled = !!firstError;
+    return firstError;
+  };
+
+  inputs.forEach((i) => i.addEventListener('input', validate));
+  validate();
 
   const miniHead = (cols: string[]) => el('thead', {}, [row(cols, true)]);
 
@@ -469,31 +596,28 @@ function openProductModal(mode: 'add' | 'modify', existing?: Product): void {
 
   renderAssocTables();
 
-  saveBtn.onclick = () => {
-    const values: FieldValues = {
-      name: name.input.value,
-      inventory: inventory.input.value,
-      price: price.input.value,
-      max: max.input.value,
-      min: min.input.value,
-    };
-    const err = validateItem(values);
+  saveBtn.onclick = async () => {
+    const err = validate();
     if (err) { errorBox.textContent = err; errorBox.classList.remove('hidden'); return; }
 
-    const product: Product = {
-      productId: parseInt(idInput.value, 10),
-      name: values.name,
-      inStock: parseInt(values.inventory, 10),
-      price: parseFloat(values.price),
-      max: parseInt(values.max, 10),
-      min: parseInt(values.min, 10),
-      associatedParts: assoc,
+    const payload: ProductPayload = {
+      name: name.input.value.trim(),
+      price: Number(price.input.value.trim()),
+      inStock: parseInt(inventory.input.value.trim(), 10),
+      max: parseInt(max.input.value.trim(), 10),
+      min: parseInt(min.input.value.trim(), 10),
+      associatedPartIds: assoc.map((p) => p.partId),
     };
-    if (mode === 'add') inv.addProduct(product);
-    else inv.updateProduct(product.productId, product);
-    close();
-    render();
+    try {
+      if (mode === 'add') await productsApi.create(payload);
+      else if (existing) await productsApi.update(existing.productId, payload);
+      close();
+      await refresh();
+    } catch (e) {
+      errorBox.textContent = e instanceof Error ? e.message : 'Save failed.';
+      errorBox.classList.remove('hidden');
+    }
   };
 }
 
-render();
+refresh();
