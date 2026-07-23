@@ -2,6 +2,13 @@
 
 This contract is the source of truth for the parallel child sessions modernizing the legacy C# WinForms app. All implementations (backend, frontend, tests, Docker) must follow it.
 
+## Development defaults
+
+- Backend dev server: `http://localhost:3001`
+- Frontend dev server: `http://localhost:5173`
+- The frontend should proxy `/api` requests to the backend during development.
+- The backend should allow CORS from the frontend origin and serve JSON with `Content-Type: application/json`.
+
 ## Domain
 
 - **Part** — base fields:
