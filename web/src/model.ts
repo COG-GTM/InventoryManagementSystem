@@ -24,6 +24,8 @@ export interface OutsourcedPart extends PartBase {
 
 export type Part = InhousePart | OutsourcedPart;
 
+export type PartPayload = Omit<InhousePart, 'partId'> | Omit<OutsourcedPart, 'partId'>;
+
 export interface Product {
   productId: number;
   name: string;
@@ -32,6 +34,15 @@ export interface Product {
   min: number;
   max: number;
   associatedParts: Part[];
+}
+
+export interface ProductPayload {
+  name: string;
+  price: number;
+  inStock: number;
+  min: number;
+  max: number;
+  associatedPartIds: number[];
 }
 
 // Seed data ported verbatim from Inventory.fakeData().
@@ -125,6 +136,52 @@ export interface FieldValues {
   max: string;
   min: string;
 }
+
+async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(path, init);
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({ error: 'Request failed' })) as { error?: string };
+    throw new Error(data.error ?? `HTTP ${res.status}`);
+  }
+  if (res.status === 204) return undefined as T;
+  return res.json() as Promise<T>;
+}
+
+function withSearch(path: string, search?: string): string {
+  return search ? `${path}?search=${encodeURIComponent(search)}` : path;
+}
+
+export const partsApi = {
+  list: (search?: string) => apiRequest<Part[]>(withSearch('/api/parts', search)),
+  get: (id: number) => apiRequest<Part>(`/api/parts/${id}`),
+  create: (part: PartPayload) => apiRequest<Part>('/api/parts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(part),
+  }),
+  update: (id: number, part: PartPayload) => apiRequest<Part>(`/api/parts/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(part),
+  }),
+  remove: (id: number) => apiRequest<void>(`/api/parts/${id}`, { method: 'DELETE' }),
+};
+
+export const productsApi = {
+  list: (search?: string) => apiRequest<Product[]>(withSearch('/api/products', search)),
+  get: (id: number) => apiRequest<Product>(`/api/products/${id}`),
+  create: (product: ProductPayload) => apiRequest<Product>('/api/products', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(product),
+  }),
+  update: (id: number, product: ProductPayload) => apiRequest<Product>(`/api/products/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(product),
+  }),
+  remove: (id: number) => apiRequest<void>(`/api/products/${id}`, { method: 'DELETE' }),
+};
 
 // Validation ported from the save handlers: min <= max, and min <= inventory <= max.
 export function validateItem(v: FieldValues): string | null {
