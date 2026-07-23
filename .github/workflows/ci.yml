@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - devin/ims-*
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Server — install, build, lint, test
+        if: hashFiles('server/package.json') != ''
+        working-directory: server
+        run: |
+          npm ci
+          npm run build
+          npm run lint
+          npm run test
+
+      - name: Web — install, build, lint, test
+        if: hashFiles('web/package.json') != ''
+        working-directory: web
+        run: |
+          npm ci
+          npm run build
+          npm run lint
+          npm run test
+
+      - name: E2E — install, build, test
+        if: hashFiles('e2e/package.json') != ''
+        working-directory: e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps
+          npm run test

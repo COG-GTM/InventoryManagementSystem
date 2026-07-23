@@ -1,6 +1,55 @@
 # InventoryManagementSystem
 ![mainscreen](https://user-images.githubusercontent.com/50165092/211186383-74f52037-1953-4a6c-b4e4-11edb63c6607.png)
 
+## Modernized full-stack app
+
+This repository also contains a modern web migration of the legacy C# WinForms Inventory Management System:
+
+- **Backend** (`server/`): Express + TypeScript + SQLite REST API implementing `api-contract.md`
+- **Frontend** (`web/`): Vite + TypeScript single-page app
+- **E2E tests** (`e2e/`): Playwright end-to-end tests
+
+See `api-contract.md` for the REST API contract and `modernization-plan.md` for the parallel modernization approach.
+
+### Run locally
+
+1. Start the backend:
+   ```bash
+   cd server
+   npm install
+   npm run dev
+   ```
+   The API will be available at `http://localhost:3001`.
+
+2. In another terminal, start the frontend:
+   ```bash
+   cd web
+   npm install
+   npm run dev
+   ```
+   The UI will be available at `http://localhost:5173`.
+
+The Vite dev server proxies `/api` requests to the backend automatically.
+
+### Run tests
+
+```bash
+cd server && npm run test
+cd web && npm test
+cd e2e && npm run test
+```
+
+### Run with Docker
+
+```bash
+docker compose up --build
+```
+
+- Backend: `http://localhost:3001`
+- Frontend: `http://localhost:8081`
+
+## Original project requirements
+
 Below are project requirements.
 
 I. User Interface
