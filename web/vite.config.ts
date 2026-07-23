@@ -1,5 +1,7 @@
 import { defineConfig } from 'vite';
 
+const apiProxyTarget = process.env.API_PROXY_TARGET || 'http://localhost:3001';
+
 export default defineConfig({
   base: './',
   build: {
@@ -8,7 +10,15 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: apiProxyTarget,
+        changeOrigin: true,
+      },
+    },
+  },
+  preview: {
+    proxy: {
+      '/api': {
+        target: apiProxyTarget,
         changeOrigin: true,
       },
     },
