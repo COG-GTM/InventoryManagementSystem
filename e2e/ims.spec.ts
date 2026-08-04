@@ -269,7 +269,7 @@ test('cancel a modal and return to main screen', async ({ page }) => {
   await expect(page.locator('h1')).toContainText('Inventory Management System');
 });
 
-test('save product with non-numeric input is rejected', async ({ page }) => {
+test('product save is blocked while inventory input is invalid', async ({ page }) => {
   const products = productsPanel(page);
   await products.getByRole('button', { name: 'Add' }).click();
   const m = modal(page);
