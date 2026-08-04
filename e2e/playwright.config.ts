@@ -21,7 +21,7 @@ if (fs.existsSync(path.join(serverDir, 'package.json'))) {
   webServers.unshift({
     command: 'npm run dev',
     cwd: serverDir,
-    url: 'http://localhost:3001',
+    url: 'http://localhost:3001/api/parts',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   });

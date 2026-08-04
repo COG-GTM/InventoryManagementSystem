@@ -59,17 +59,6 @@ async function addProduct(page: Page, data: {
   await expect(m).not.toBeVisible();
 }
 
-let backendAvailable = false;
-
-test.beforeAll(async ({ request }) => {
-  try {
-    const res = await request.get('http://localhost:3001/api/parts', { timeout: 2000 });
-    backendAvailable = res.ok();
-  } catch {
-    backendAvailable = false;
-  }
-});
-
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
 });
@@ -176,9 +165,9 @@ test('save part with min > max is rejected', async ({ page }) => {
   await fillField(m, 'Min', '10');
   await fillField(m, 'Max', '5');
   await fillField(m, 'Machine ID', '123');
-  await m.getByRole('button', { name: 'Save' }).click();
-  await expect(m).toBeVisible();
-  await expect(m.locator('.form-error')).toContainText('Minimum must be less than maximum');
+  await expect(m.getByRole('button', { name: 'Save' })).toBeDisabled();
+  await expect(m.locator('.field').filter({ hasText: 'Min' }).locator('input')).toHaveClass(/invalid/);
+  await expect(m.locator('.field').filter({ hasText: 'Max' }).locator('input')).toHaveClass(/invalid/);
 });
 
 test('save part with inventory outside min/max is rejected', async ({ page }) => {
@@ -191,9 +180,8 @@ test('save part with inventory outside min/max is rejected', async ({ page }) =>
   await fillField(m, 'Min', '1');
   await fillField(m, 'Max', '10');
   await fillField(m, 'Machine ID', '123');
-  await m.getByRole('button', { name: 'Save' }).click();
-  await expect(m).toBeVisible();
-  await expect(m.locator('.form-error')).toContainText('Inventory must be between minimum and maximum');
+  await expect(m.getByRole('button', { name: 'Save' })).toBeDisabled();
+  await expect(m.locator('.field').filter({ hasText: 'Inventory (In Stock)' }).locator('input')).toHaveClass(/invalid/);
 });
 
 test('delete product that has associated parts is blocked', async ({ page }) => {
@@ -282,8 +270,6 @@ test('cancel a modal and return to main screen', async ({ page }) => {
 });
 
 test('save product with non-numeric input is rejected', async ({ page }) => {
-  test.skip(!backendAvailable, 'Requires full-stack numeric validation');
-
   const products = productsPanel(page);
   await products.getByRole('button', { name: 'Add' }).click();
   const m = modal(page);
@@ -292,7 +278,6 @@ test('save product with non-numeric input is rejected', async ({ page }) => {
   await fillField(m, 'Price', '10');
   await fillField(m, 'Min', '1');
   await fillField(m, 'Max', '10');
-  await m.getByRole('button', { name: 'Save' }).click();
-  await expect(m).toBeVisible();
-  await expect(m.locator('.form-error')).toBeVisible();
+  await expect(m.getByRole('button', { name: 'Save' })).toBeDisabled();
+  await expect(m.locator('.field').filter({ hasText: 'Inventory (In Stock)' }).locator('input')).toHaveClass(/invalid/);
 });
