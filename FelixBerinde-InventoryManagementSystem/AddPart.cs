@@ -45,15 +45,30 @@ namespace FelixBerinde_InventoryManagementSystem
 
             if (int.Parse(minBox.Text) > int.Parse(maxBox.Text))
             {
+                minBox.BackColor = System.Drawing.Color.Salmon;
+                maxBox.BackColor = System.Drawing.Color.Salmon;
+                ToolTip minMax = new ToolTip();
+                minMax.ShowAlways = true;
+                minMax.SetToolTip(minBox, "Minimum must be less than maximum.");
+                minMax.SetToolTip(maxBox, "Minimum must be less than maximum.");
                 MessageBox.Show("Minimum must be less than maximum.");
                 return;
             }
 
+            minBox.BackColor = System.Drawing.Color.White;
+            maxBox.BackColor = System.Drawing.Color.White;
+
             if (int.Parse(inventoryBox.Text) > int.Parse(maxBox.Text) || int.Parse(inventoryBox.Text) < int.Parse(minBox.Text))
             {
+                inventoryBox.BackColor = System.Drawing.Color.Salmon;
+                ToolTip inRange = new ToolTip();
+                inRange.ShowAlways = true;
+                inRange.SetToolTip(inventoryBox, "Inventory must be between minimum and maximum.");
                 MessageBox.Show("Inventory must be between minimum and maximum.");
                 return;
             }
+
+            inventoryBox.BackColor = System.Drawing.Color.White;
 
 
             int num = Inventory.AllParts.Count + 1;
