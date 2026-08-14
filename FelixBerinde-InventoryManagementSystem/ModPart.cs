@@ -13,6 +13,7 @@ namespace FelixBerinde_InventoryManagementSystem
 {
     public partial class ModPart : Form
     {
+        private readonly ToolTip validationToolTip = new ToolTip { ShowAlways = true };
         
         public ModPart()
         {
@@ -55,15 +56,29 @@ namespace FelixBerinde_InventoryManagementSystem
         {
             if (int.Parse(minBox.Text) > int.Parse(maxBox.Text))
             {
+                minBox.BackColor = System.Drawing.Color.Salmon;
+                maxBox.BackColor = System.Drawing.Color.Salmon;
+                validationToolTip.SetToolTip(minBox, "Minimum must be less than maximum.");
+                validationToolTip.SetToolTip(maxBox, "Minimum must be less than maximum.");
                 MessageBox.Show("Minimum must be less than maximum.");
                 return;
             }
 
+            minBox.BackColor = System.Drawing.Color.White;
+            maxBox.BackColor = System.Drawing.Color.White;
+            validationToolTip.SetToolTip(minBox, string.Empty);
+            validationToolTip.SetToolTip(maxBox, string.Empty);
+
             if (int.Parse(inventoryBox.Text) > int.Parse(maxBox.Text) || int.Parse(inventoryBox.Text) < int.Parse(minBox.Text))
             {
+                inventoryBox.BackColor = System.Drawing.Color.Salmon;
+                validationToolTip.SetToolTip(inventoryBox, "Inventory must be between minimum and maximum.");
                 MessageBox.Show("Inventory must be between minimum and maximum.");
                 return;
             }
+
+            inventoryBox.BackColor = System.Drawing.Color.White;
+            validationToolTip.SetToolTip(inventoryBox, string.Empty);
 
 
             int num = int.Parse(IDBox.Text);
@@ -161,14 +176,13 @@ namespace FelixBerinde_InventoryManagementSystem
             if (string.IsNullOrWhiteSpace(nameBox.Text))
             {
                 nameBox.BackColor = System.Drawing.Color.Salmon;
-                ToolTip isAString = new ToolTip();
-                isAString.ShowAlways = true;
-                isAString.SetToolTip(nameBox, "Please enter a Part name.");
+                validationToolTip.SetToolTip(nameBox, "Please enter a Part name.");
                 saveBtn.Enabled = false;
             }
             else
             {
                 nameBox.BackColor = System.Drawing.Color.White;
+                validationToolTip.SetToolTip(nameBox, string.Empty);
                 saveBtn.Enabled = true;
             }
         }
@@ -178,14 +192,13 @@ namespace FelixBerinde_InventoryManagementSystem
             if (string.IsNullOrWhiteSpace(inventoryBox.Text) || int.TryParse(inventoryBox.Text, out _) == false)
             {
                 inventoryBox.BackColor = System.Drawing.Color.Salmon;
-                ToolTip isANumber= new ToolTip();
-                isANumber.ShowAlways = true;
-                isANumber.SetToolTip(inventoryBox, "Please enter a number.");
+                validationToolTip.SetToolTip(inventoryBox, "Please enter a number.");
                 saveBtn.Enabled = false;
             }
             else
             {
                 inventoryBox.BackColor = System.Drawing.Color.White;
+                validationToolTip.SetToolTip(inventoryBox, string.Empty);
                 saveBtn.Enabled = true;
             }
         }
@@ -195,14 +208,13 @@ namespace FelixBerinde_InventoryManagementSystem
             if (string.IsNullOrWhiteSpace(priceCostBox.Text) || decimal.TryParse(priceCostBox.Text, out _) == false)
             {
                 priceCostBox.BackColor = System.Drawing.Color.Salmon;
-                ToolTip isANumber = new ToolTip();
-                isANumber.ShowAlways = true;
-                isANumber.SetToolTip(priceCostBox, "Please enter a number.");
+                validationToolTip.SetToolTip(priceCostBox, "Please enter a number.");
                 saveBtn.Enabled = false;
             }
             else
             {
                 priceCostBox.BackColor = System.Drawing.Color.White;
+                validationToolTip.SetToolTip(priceCostBox, string.Empty);
                 saveBtn.Enabled = true;
             }
         }
@@ -212,14 +224,13 @@ namespace FelixBerinde_InventoryManagementSystem
             if (string.IsNullOrWhiteSpace(maxBox.Text) || int.TryParse(maxBox.Text, out _) == false)
             {
                 maxBox.BackColor = System.Drawing.Color.Salmon;
-                ToolTip isANumber = new ToolTip();
-                isANumber.ShowAlways = true;
-                isANumber.SetToolTip(maxBox, "Please enter a number.");
+                validationToolTip.SetToolTip(maxBox, "Please enter a number.");
                 saveBtn.Enabled = false;
             }
             else
             {
                 maxBox.BackColor = System.Drawing.Color.White;
+                validationToolTip.SetToolTip(maxBox, string.Empty);
                 saveBtn.Enabled = true;
             }
         }
@@ -229,14 +240,13 @@ namespace FelixBerinde_InventoryManagementSystem
             if (string.IsNullOrWhiteSpace(minBox.Text) || int.TryParse(minBox.Text, out _) == false)
             {
                 minBox.BackColor = System.Drawing.Color.Salmon;
-                ToolTip isANumber = new ToolTip();
-                isANumber.ShowAlways = true;
-                isANumber.SetToolTip(inventoryBox, "Please enter a number.");
+                validationToolTip.SetToolTip(minBox, "Please enter a number.");
                 saveBtn.Enabled = false;
             }
             else
             {
                 minBox.BackColor = System.Drawing.Color.White;
+                validationToolTip.SetToolTip(minBox, string.Empty);
                 saveBtn.Enabled = true;
             }
         }
@@ -248,14 +258,13 @@ namespace FelixBerinde_InventoryManagementSystem
                 if (string.IsNullOrWhiteSpace(machineIDBox.Text) || int.TryParse(machineIDBox.Text, out _) == false)
                 {
                     machineIDBox.BackColor = System.Drawing.Color.Salmon;
-                    ToolTip isANumber = new ToolTip();
-                    isANumber.ShowAlways = true;
-                    isANumber.SetToolTip(machineIDBox, "Please enter a number.");
+                    validationToolTip.SetToolTip(machineIDBox, "Please enter a number.");
                     saveBtn.Enabled = false;
                 }
                 else
                 {
                     machineIDBox.BackColor = System.Drawing.Color.White;
+                    validationToolTip.SetToolTip(machineIDBox, string.Empty);
                     saveBtn.Enabled = true;
                 }
             }
@@ -264,14 +273,13 @@ namespace FelixBerinde_InventoryManagementSystem
                 if (string.IsNullOrWhiteSpace(machineIDBox.Text))
                 {
                     machineIDBox.BackColor = System.Drawing.Color.Salmon;
-                    ToolTip isText = new ToolTip();
-                    isText.ShowAlways = true;
-                    isText.SetToolTip(machineIDBox, "Please enter a company name.");
+                    validationToolTip.SetToolTip(machineIDBox, "Please enter a company name.");
                     saveBtn.Enabled = false;
                 }
                 else
                 {
                     machineIDBox.BackColor = System.Drawing.Color.White;
+                    validationToolTip.SetToolTip(machineIDBox, string.Empty);
                     saveBtn.Enabled = true;
                 }
             }
