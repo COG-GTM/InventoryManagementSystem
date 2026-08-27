@@ -114,14 +114,8 @@ namespace FelixBerinde_InventoryManagementSystem.model
 
         public static bool removeProduct(int productID)
         {
-            foreach (var product in Products)
-            {
-                if (product.ProductID == productID)
-                {
-                    Products.Remove(product);
-                }
-            }
-            return true;
+            Product product = lookupProduct(productID);
+            return product != null && Products.Remove(product);
         }
 
         public static Product lookupProduct(int productID)

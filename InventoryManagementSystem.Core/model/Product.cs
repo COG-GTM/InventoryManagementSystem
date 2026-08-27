@@ -19,18 +19,8 @@ namespace FelixBerinde_InventoryManagementSystem
 
         public bool removeAssociatedPart(int partID)
         {
-            foreach (var part in AssociatedParts)
-            {
-                if (part.PartID == partID)
-                {
-                    AssociatedParts.Remove(part);
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            return true;
+            Part part = lookupAssociatedPart(partID);
+            return part != null && AssociatedParts.Remove(part);
         }
 
         public Part lookupAssociatedPart(int partID)
