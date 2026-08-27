@@ -48,7 +48,7 @@ namespace InventoryManagementSystem.UI.Tests
 
         private static void InitializeApplicationConfiguration()
         {
-            Type configurationType = typeof(MainScreen).Assembly.GetType("System.Windows.Forms.ApplicationConfiguration");
+            Type configurationType = typeof(MainScreen).Assembly.GetType("FelixBerinde_InventoryManagementSystem.ApplicationConfiguration");
             MethodInfo initialize = configurationType?.GetMethod("Initialize", BindingFlags.Static | BindingFlags.Public);
             Assert.NotNull(initialize);
             initialize.Invoke(null, null);
