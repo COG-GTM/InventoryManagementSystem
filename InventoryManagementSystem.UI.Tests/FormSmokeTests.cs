@@ -1,4 +1,5 @@
 using System;
+using System.Drawing;
 using System.Reflection;
 using System.Windows.Forms;
 using FelixBerinde_InventoryManagementSystem;
@@ -16,11 +17,21 @@ namespace InventoryManagementSystem.UI.Tests
             Inventory.Products.Clear();
             Inventory.ranFakeData = false;
 
+            InitializeApplicationConfiguration();
+
             using var mainScreen = new MainScreen();
             using var addPart = new AddPart();
             using var addProduct = new AddProduct();
             using var modPart = new ModPart(new Inhouse { PartID = 1, Name = "Part" });
             using var modProduct = new ModProduct(new Product { ProductID = 1, Name = "Product" });
+
+            Assert.Equal("Microsoft Sans Serif", mainScreen.Font.FontFamily.Name);
+            Assert.Equal(8.25f, mainScreen.Font.SizeInPoints);
+            Assert.Equal(new Size(1184, 561), mainScreen.ClientSize);
+            Assert.Equal(new Size(464, 441), addPart.ClientSize);
+            Assert.Equal(new Size(1184, 861), addProduct.ClientSize);
+            Assert.Equal(new Size(464, 441), modPart.ClientSize);
+            Assert.Equal(new Size(1184, 861), modProduct.ClientSize);
 
             Invoke(mainScreen, "MainScreen_Load");
             Assert.NotEmpty(Inventory.AllParts);
@@ -33,6 +44,14 @@ namespace InventoryManagementSystem.UI.Tests
             SetText(addProduct, "nameBox", string.Empty);
             Invoke(addProduct, "nameBox_TextChanged");
             Assert.False(GetControl<Button>(addProduct, "saveBtn").Enabled);
+        }
+
+        private static void InitializeApplicationConfiguration()
+        {
+            Type configurationType = typeof(MainScreen).Assembly.GetType("System.Windows.Forms.ApplicationConfiguration");
+            MethodInfo initialize = configurationType?.GetMethod("Initialize", BindingFlags.Static | BindingFlags.Public);
+            Assert.NotNull(initialize);
+            initialize.Invoke(null, null);
         }
 
         private static void Invoke(object instance, string methodName)

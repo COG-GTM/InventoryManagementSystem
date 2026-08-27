@@ -7,6 +7,7 @@
     <RootNamespace>FelixBerinde_InventoryManagementSystem</RootNamespace>
     <AssemblyName>FelixBerinde-InventoryManagementSystem</AssemblyName>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <ApplicationDefaultFont>Microsoft Sans Serif, 8.25pt</ApplicationDefaultFont>
     <Nullable>disable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <AssemblyTitle>FelixBerinde-InventoryManagementSystem</AssemblyTitle>
