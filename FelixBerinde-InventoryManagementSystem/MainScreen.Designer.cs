@@ -45,8 +45,13 @@ namespace FelixBerinde_InventoryManagementSystem
             this.productSearchBtn = new System.Windows.Forms.Button();
             this.partSearchBox = new System.Windows.Forms.TextBox();
             this.productSearchBox = new System.Windows.Forms.TextBox();
+            this.summaryStatusStrip = new System.Windows.Forms.StatusStrip();
+            this.partCountStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
+            this.productCountStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
+            this.inventoryValueStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
             ((System.ComponentModel.ISupportInitialize)(this.dgvParts)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dgvProducts)).BeginInit();
+            this.summaryStatusStrip.SuspendLayout();
             this.SuspendLayout();
             // 
             // label1
@@ -201,11 +206,44 @@ namespace FelixBerinde_InventoryManagementSystem
             this.productSearchBox.Size = new System.Drawing.Size(220, 20);
             this.productSearchBox.TabIndex = 15;
             // 
+            // summaryStatusStrip
+            // 
+            this.summaryStatusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.partCountStatusLabel,
+            this.productCountStatusLabel,
+            this.inventoryValueStatusLabel});
+            this.summaryStatusStrip.Location = new System.Drawing.Point(0, 561);
+            this.summaryStatusStrip.Name = "summaryStatusStrip";
+            this.summaryStatusStrip.Size = new System.Drawing.Size(1184, 22);
+            this.summaryStatusStrip.SizingGrip = false;
+            this.summaryStatusStrip.TabIndex = 16;
+            // 
+            // partCountStatusLabel
+            // 
+            this.partCountStatusLabel.BorderSides = System.Windows.Forms.ToolStripStatusLabelBorderSides.Right;
+            this.partCountStatusLabel.Name = "partCountStatusLabel";
+            this.partCountStatusLabel.Size = new System.Drawing.Size(51, 17);
+            this.partCountStatusLabel.Text = "Parts: 0";
+            // 
+            // productCountStatusLabel
+            // 
+            this.productCountStatusLabel.BorderSides = System.Windows.Forms.ToolStripStatusLabelBorderSides.Right;
+            this.productCountStatusLabel.Name = "productCountStatusLabel";
+            this.productCountStatusLabel.Size = new System.Drawing.Size(69, 17);
+            this.productCountStatusLabel.Text = "Products: 0";
+            // 
+            // inventoryValueStatusLabel
+            // 
+            this.inventoryValueStatusLabel.Name = "inventoryValueStatusLabel";
+            this.inventoryValueStatusLabel.Size = new System.Drawing.Size(130, 17);
+            this.inventoryValueStatusLabel.Text = "Total Inventory Value: $0.00";
+            // 
             // MainScreen
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1184, 561);
+            this.ClientSize = new System.Drawing.Size(1184, 583);
+            this.Controls.Add(this.summaryStatusStrip);
             this.Controls.Add(this.productSearchBox);
             this.Controls.Add(this.partSearchBox);
             this.Controls.Add(this.productSearchBtn);
@@ -223,14 +261,16 @@ namespace FelixBerinde_InventoryManagementSystem
             this.Controls.Add(this.dgvParts);
             this.Controls.Add(this.label1);
             this.MaximizeBox = false;
-            this.MaximumSize = new System.Drawing.Size(1200, 600);
-            this.MinimumSize = new System.Drawing.Size(1200, 600);
+            this.MaximumSize = new System.Drawing.Size(1200, 622);
+            this.MinimumSize = new System.Drawing.Size(1200, 622);
             this.Name = "MainScreen";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Main Screen";
             this.Load += new System.EventHandler(this.MainScreen_Load);
             ((System.ComponentModel.ISupportInitialize)(this.dgvParts)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.dgvProducts)).EndInit();
+            this.summaryStatusStrip.ResumeLayout(false);
+            this.summaryStatusStrip.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -254,6 +294,10 @@ namespace FelixBerinde_InventoryManagementSystem
         private System.Windows.Forms.Button productSearchBtn;
         private System.Windows.Forms.TextBox partSearchBox;
         private System.Windows.Forms.TextBox productSearchBox;
+        private System.Windows.Forms.StatusStrip summaryStatusStrip;
+        private System.Windows.Forms.ToolStripStatusLabel partCountStatusLabel;
+        private System.Windows.Forms.ToolStripStatusLabel productCountStatusLabel;
+        private System.Windows.Forms.ToolStripStatusLabel inventoryValueStatusLabel;
     }
 }
 
