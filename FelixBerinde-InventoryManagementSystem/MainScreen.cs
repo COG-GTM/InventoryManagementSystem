@@ -103,9 +103,25 @@ namespace FelixBerinde_InventoryManagementSystem
 
                 try
                 {
-                    using (StreamWriter writer = new StreamWriter(dialog.FileName))
+                    string tempFile = Path.Combine(Path.GetDirectoryName(dialog.FileName),
+                        Guid.NewGuid().ToString("N") + ".tmp");
+                    try
                     {
-                        WriteCsv(grid, writer);
+                        using (StreamWriter writer = new StreamWriter(
+                            new FileStream(tempFile, FileMode.CreateNew, FileAccess.Write)))
+                        {
+                            WriteCsv(grid, writer);
+                        }
+
+                        if (File.Exists(dialog.FileName))
+                            File.Replace(tempFile, dialog.FileName, null);
+                        else
+                            File.Move(tempFile, dialog.FileName);
+                    }
+                    finally
+                    {
+                        if (File.Exists(tempFile))
+                            File.Delete(tempFile);
                     }
                 }
                 catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
@@ -127,6 +143,8 @@ namespace FelixBerinde_InventoryManagementSystem
                     continue;
 
                 string name = (part != null ? part.Name : product.Name) ?? string.Empty;
+                if (name.Length > 0 && "=+-@\t\r".IndexOf(name[0]) >= 0)
+                    name = "'" + name;
                 if (name.IndexOfAny(new[] { ',', '"', '\r', '\n' }) >= 0)
                     name = "\"" + name.Replace("\"", "\"\"") + "\"";
 
