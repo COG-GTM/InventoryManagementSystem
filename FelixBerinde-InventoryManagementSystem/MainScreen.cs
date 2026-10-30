@@ -1,6 +1,8 @@
 ﻿using FelixBerinde_InventoryManagementSystem.model;
 using System;
 using System.ComponentModel;
+using System.Globalization;
+using System.Linq;
 using System.Windows.Forms;
 
 
@@ -51,6 +53,31 @@ namespace FelixBerinde_InventoryManagementSystem
             dgvParts.Columns.GetLastColumn(DataGridViewElementStates.None, DataGridViewElementStates.None).AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
             dgvProducts.Columns.GetLastColumn(DataGridViewElementStates.None, DataGridViewElementStates.None).AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
 
+            //keep the inventory summary status bar in sync with the inventory lists
+            Inventory.AllParts.ListChanged += Inventory_ListChanged;
+            Inventory.Products.ListChanged += Inventory_ListChanged;
+            FormClosed += (s, e) =>
+            {
+                Inventory.AllParts.ListChanged -= Inventory_ListChanged;
+                Inventory.Products.ListChanged -= Inventory_ListChanged;
+            };
+            UpdateInventorySummary();
+        }
+
+        private void Inventory_ListChanged(object sender, ListChangedEventArgs e)
+        {
+            UpdateInventorySummary();
+        }
+
+        //total part count, total product count and total inventory value (price x inventory)
+        private void UpdateInventorySummary()
+        {
+            decimal totalValue = Inventory.AllParts.Sum(p => p.Price * p.InStock)
+                + Inventory.Products.Sum(p => p.Price * p.InStock);
+
+            partCountStatusLabel.Text = "Parts: " + Inventory.AllParts.Count;
+            productCountStatusLabel.Text = "Products: " + Inventory.Products.Count;
+            inventoryValueStatusLabel.Text = "Total Inventory Value: " + totalValue.ToString("C", CultureInfo.GetCultureInfo("en-US"));
         }
         //closes the application on button click
         private void exitBtn_Click(object sender, EventArgs e)
