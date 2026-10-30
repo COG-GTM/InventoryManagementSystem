@@ -37,7 +37,9 @@ namespace FelixBerinde_InventoryManagementSystem
             this.partAddBtn = new System.Windows.Forms.Button();
             this.partModifyBtn = new System.Windows.Forms.Button();
             this.partDeleteBtn = new System.Windows.Forms.Button();
+            this.partDuplicateBtn = new System.Windows.Forms.Button();
             this.productDeleteBtn = new System.Windows.Forms.Button();
+            this.productDuplicateBtn = new System.Windows.Forms.Button();
             this.productModifyBtn = new System.Windows.Forms.Button();
             this.productAddBtn = new System.Windows.Forms.Button();
             this.exitBtn = new System.Windows.Forms.Button();
@@ -126,6 +128,16 @@ namespace FelixBerinde_InventoryManagementSystem
             this.partDeleteBtn.Text = "Delete";
             this.partDeleteBtn.UseVisualStyleBackColor = true;
             this.partDeleteBtn.Click += new System.EventHandler(this.partDeleteBtn_Click);
+            //
+            // partDuplicateBtn
+            //
+            this.partDuplicateBtn.Location = new System.Drawing.Point(411, 361);
+            this.partDuplicateBtn.Name = "partDuplicateBtn";
+            this.partDuplicateBtn.Size = new System.Drawing.Size(75, 23);
+            this.partDuplicateBtn.TabIndex = 16;
+            this.partDuplicateBtn.Text = "Duplicate";
+            this.partDuplicateBtn.UseVisualStyleBackColor = true;
+            this.partDuplicateBtn.Click += new System.EventHandler(this.partDuplicateBtn_Click);
             // 
             // productDeleteBtn
             // 
@@ -136,6 +148,16 @@ namespace FelixBerinde_InventoryManagementSystem
             this.productDeleteBtn.Text = "Delete";
             this.productDeleteBtn.UseVisualStyleBackColor = true;
             this.productDeleteBtn.Click += new System.EventHandler(this.productDeleteBtn_Click);
+            //
+            // productDuplicateBtn
+            //
+            this.productDuplicateBtn.Location = new System.Drawing.Point(1022, 361);
+            this.productDuplicateBtn.Name = "productDuplicateBtn";
+            this.productDuplicateBtn.Size = new System.Drawing.Size(75, 23);
+            this.productDuplicateBtn.TabIndex = 17;
+            this.productDuplicateBtn.Text = "Duplicate";
+            this.productDuplicateBtn.UseVisualStyleBackColor = true;
+            this.productDuplicateBtn.Click += new System.EventHandler(this.productDuplicateBtn_Click);
             // 
             // productModifyBtn
             // 
@@ -211,9 +233,11 @@ namespace FelixBerinde_InventoryManagementSystem
             this.Controls.Add(this.productSearchBtn);
             this.Controls.Add(this.partSearchBtn);
             this.Controls.Add(this.exitBtn);
+            this.Controls.Add(this.productDuplicateBtn);
             this.Controls.Add(this.productDeleteBtn);
             this.Controls.Add(this.productModifyBtn);
             this.Controls.Add(this.productAddBtn);
+            this.Controls.Add(this.partDuplicateBtn);
             this.Controls.Add(this.partDeleteBtn);
             this.Controls.Add(this.partModifyBtn);
             this.Controls.Add(this.partAddBtn);
@@ -246,7 +270,9 @@ namespace FelixBerinde_InventoryManagementSystem
         private System.Windows.Forms.Button partAddBtn;
         private System.Windows.Forms.Button partModifyBtn;
         private System.Windows.Forms.Button partDeleteBtn;
+        private System.Windows.Forms.Button partDuplicateBtn;
         private System.Windows.Forms.Button productDeleteBtn;
+        private System.Windows.Forms.Button productDuplicateBtn;
         private System.Windows.Forms.Button productModifyBtn;
         private System.Windows.Forms.Button productAddBtn;
         private System.Windows.Forms.Button exitBtn;

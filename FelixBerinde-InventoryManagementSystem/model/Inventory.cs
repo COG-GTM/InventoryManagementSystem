@@ -133,6 +133,32 @@ namespace FelixBerinde_InventoryManagementSystem.model
             }
         }
 
+        public static Part duplicatePart(Part part)
+        {
+            int partID = AllParts.Count == 0 ? 1 : AllParts.Max(existingPart => existingPart.PartID) + 1;
+            Part copy;
+            if (part is Inhouse ih)
+            {
+                copy = new Inhouse { PartID = partID, MachineID = ih.MachineID };
+            }
+            else if (part is Outsourced os)
+            {
+                copy = new Outsourced { PartID = partID, CompanyName = os.CompanyName };
+            }
+            else
+            {
+                throw new ArgumentException("Unsupported part type.", nameof(part));
+            }
+
+            copy.Name = part.Name + " (copy)";
+            copy.Price = part.Price;
+            copy.InStock = part.InStock;
+            copy.Min = part.Min;
+            copy.Max = part.Max;
+            AllParts.Add(copy);
+            return copy;
+        }
+
         //methods for products
 
         public static void addProduct(Product product)
@@ -173,6 +199,28 @@ namespace FelixBerinde_InventoryManagementSystem.model
                     Products[i] = product;
                 }
             }
+        }
+
+        public static Product duplicateProduct(Product product)
+        {
+            int productID = Products.Count == 0 ? 1 : Products.Max(existingProduct => existingProduct.ProductID) + 1;
+            Product copy = new Product
+            {
+                ProductID = productID,
+                Name = product.Name + " (copy)",
+                Price = product.Price,
+                InStock = product.InStock,
+                Min = product.Min,
+                Max = product.Max
+            };
+
+            foreach (Part part in product.AssociatedParts)
+            {
+                copy.addAssociatedPart(part);
+            }
+
+            Products.Add(copy);
+            return copy;
         }
     }
 }
