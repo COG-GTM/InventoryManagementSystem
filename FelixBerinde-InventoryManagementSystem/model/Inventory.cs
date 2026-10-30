@@ -133,9 +133,14 @@ namespace FelixBerinde_InventoryManagementSystem.model
             }
         }
 
+        public static int nextPartID()
+        {
+            return AllParts.Count == 0 ? 1 : AllParts.Max(existingPart => existingPart.PartID) + 1;
+        }
+
         public static Part duplicatePart(Part part)
         {
-            int partID = AllParts.Count == 0 ? 1 : AllParts.Max(existingPart => existingPart.PartID) + 1;
+            int partID = nextPartID();
             Part copy;
             if (part is Inhouse ih)
             {
@@ -201,9 +206,14 @@ namespace FelixBerinde_InventoryManagementSystem.model
             }
         }
 
+        public static int nextProductID()
+        {
+            return Products.Count == 0 ? 1 : Products.Max(existingProduct => existingProduct.ProductID) + 1;
+        }
+
         public static Product duplicateProduct(Product product)
         {
-            int productID = Products.Count == 0 ? 1 : Products.Max(existingProduct => existingProduct.ProductID) + 1;
+            int productID = nextProductID();
             Product copy = new Product
             {
                 ProductID = productID,
