@@ -1,6 +1,9 @@
 ﻿using FelixBerinde_InventoryManagementSystem.model;
 using System;
 using System.ComponentModel;
+using System.Drawing;
+using System.Globalization;
+using System.IO;
 using System.Windows.Forms;
 
 
@@ -11,6 +14,11 @@ namespace FelixBerinde_InventoryManagementSystem
         public MainScreen()
         {
             InitializeComponent();
+
+            AddExportButton(dgvParts, partAddBtn, "parts.csv");
+            AddExportButton(dgvProducts, productAddBtn, "products.csv");
+            dgvParts.CellFormatting += StockCellFormatting;
+            dgvProducts.CellFormatting += StockCellFormatting;
 
             //set the data source
             dgvParts.DataSource = Inventory.AllParts;
@@ -52,6 +60,85 @@ namespace FelixBerinde_InventoryManagementSystem
             dgvProducts.Columns.GetLastColumn(DataGridViewElementStates.None, DataGridViewElementStates.None).AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
 
         }
+        private void AddExportButton(DataGridView grid, Button addButton, string fileName)
+        {
+            Button exportButton = new Button
+            {
+                Text = "Export CSV",
+                Name = grid.Name + "ExportButton",
+                Location = new Point(grid.Left, addButton.Top),
+                Size = new Size(100, addButton.Height),
+                UseVisualStyleBackColor = true
+            };
+            exportButton.Click += (sender, e) => ExportCsv(grid, fileName);
+            Controls.Add(exportButton);
+        }
+
+        private void StockCellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (e.RowIndex < 0)
+                return;
+
+            DataGridView grid = (DataGridView)sender;
+            object item = grid.Rows[e.RowIndex].DataBoundItem;
+            Part part = item as Part;
+            Product product = item as Product;
+            bool lowStock = part != null ? part.InStock <= part.Min :
+                product != null && product.InStock <= product.Min;
+            e.CellStyle.BackColor = lowStock ? Color.Moccasin : grid.DefaultCellStyle.BackColor;
+        }
+
+        private void ExportCsv(DataGridView grid, string fileName)
+        {
+            using (SaveFileDialog dialog = new SaveFileDialog
+            {
+                Filter = "CSV files (*.csv)|*.csv",
+                DefaultExt = "csv",
+                AddExtension = true,
+                FileName = fileName
+            })
+            {
+                if (dialog.ShowDialog(this) != DialogResult.OK)
+                    return;
+
+                try
+                {
+                    using (StreamWriter writer = new StreamWriter(dialog.FileName))
+                    {
+                        WriteCsv(grid, writer);
+                    }
+                }
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+                {
+                    MessageBox.Show(this, "Unable to export CSV: " + ex.Message,
+                        "Export CSV", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private static void WriteCsv(DataGridView grid, TextWriter writer)
+        {
+            writer.WriteLine("ID,Name,Inventory,Price,Min,Max");
+            foreach (DataGridViewRow row in grid.Rows)
+            {
+                Part part = row.DataBoundItem as Part;
+                Product product = row.DataBoundItem as Product;
+                if (part == null && product == null)
+                    continue;
+
+                string name = (part != null ? part.Name : product.Name) ?? string.Empty;
+                if (name.IndexOfAny(new[] { ',', '"', '\r', '\n' }) >= 0)
+                    name = "\"" + name.Replace("\"", "\"\"") + "\"";
+
+                writer.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0},{1},{2},{3},{4},{5}",
+                    part != null ? part.PartID : product.ProductID, name,
+                    part != null ? part.InStock : product.InStock,
+                    part != null ? part.Price : product.Price,
+                    part != null ? part.Min : product.Min,
+                    part != null ? part.Max : product.Max));
+            }
+        }
+
         //closes the application on button click
         private void exitBtn_Click(object sender, EventArgs e)
         {
