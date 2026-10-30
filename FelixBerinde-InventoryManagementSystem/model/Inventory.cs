@@ -28,7 +28,7 @@ namespace FelixBerinde_InventoryManagementSystem.model
                 {
                     PartID = 1,
                     Name = "Light",
-                    InStock = 12,
+                    InStock = 4,
                     Min = 4,
                     Max = 20,
                     Price = 25.25m,
