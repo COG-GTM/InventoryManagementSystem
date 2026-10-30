@@ -166,6 +166,55 @@ namespace FelixBerinde_InventoryManagementSystem
             }
         }
 
+        private void partDuplicateBtn_Click(object sender, EventArgs e)
+        {
+            if (dgvParts.CurrentRow == null || !dgvParts.CurrentRow.Selected)
+            {
+                MessageBox.Show("Nothing Selected!", "Please make a selection.");
+                return;
+            }
+
+            Part copy = Inventory.duplicatePart((Part)dgvParts.CurrentRow.DataBoundItem);
+            if (dgvParts.DataSource != Inventory.AllParts)
+            {
+                dgvParts.DataSource = Inventory.AllParts;
+                partSearchBox.Clear();
+            }
+            selectRow(dgvParts, copy);
+        }
+
+        private void productDuplicateBtn_Click(object sender, EventArgs e)
+        {
+            if (dgvProducts.CurrentRow == null || !dgvProducts.CurrentRow.Selected)
+            {
+                MessageBox.Show("Nothing Selected!", "Please make a selection.");
+                return;
+            }
+
+            Product copy = Inventory.duplicateProduct((Product)dgvProducts.CurrentRow.DataBoundItem);
+            if (dgvProducts.DataSource != Inventory.Products)
+            {
+                dgvProducts.DataSource = Inventory.Products;
+                productSearchBox.Clear();
+            }
+            selectRow(dgvProducts, copy);
+        }
+
+        private void selectRow(DataGridView grid, object item)
+        {
+            foreach (DataGridViewRow row in grid.Rows)
+            {
+                if (row.DataBoundItem == item)
+                {
+                    grid.ClearSelection();
+                    grid.CurrentCell = row.Cells[0];
+                    row.Selected = true;
+                    grid.FirstDisplayedScrollingRowIndex = row.Index;
+                    return;
+                }
+            }
+        }
+
         private void partSearchBtn_Click(object sender, EventArgs e)
         {
             BindingList<Part> TempList = new BindingList<Part>();

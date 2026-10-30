@@ -101,7 +101,7 @@ namespace FelixBerinde_InventoryManagementSystem
             }
 
             //Random rnd = new Random();
-            int num = Inventory.Products.Count + 1;
+            int num = Inventory.nextProductID();
 
             var name = nameBox.Text;
 

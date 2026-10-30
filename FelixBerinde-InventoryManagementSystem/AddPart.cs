@@ -56,7 +56,7 @@ namespace FelixBerinde_InventoryManagementSystem
             }
 
 
-            int num = Inventory.AllParts.Count + 1;
+            int num = Inventory.nextPartID();
 
             var name = nameBox.Text;
 
