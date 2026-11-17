@@ -1,6 +1,6 @@
 # Inventory Management System — API Contract
 
-This contract is the source of truth for the parallel child sessions modernizing the legacy C# WinForms app. All implementations (backend, frontend, tests, Docker) must follow it.
+REST contract between the `server/` API and the `web/` client that replace the legacy C# WinForms app. Seed data and validation mirror the legacy behavior.
 
 ## Development defaults
 
