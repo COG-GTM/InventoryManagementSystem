@@ -47,6 +47,7 @@ docker compose up --build
 
 - Backend: `http://localhost:3001`
 - Frontend: `http://localhost:8081`
+- Data: SQLite at `/data/ims.db` in the `ims-data` volume, kept across `docker compose down`/`up` (use `docker compose down -v` to reset).
 
 ## Original project requirements
 

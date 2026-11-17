@@ -7,6 +7,8 @@ import {
   FieldValues,
   companyOrMachine,
   validateItem,
+  isIntegerText,
+  isDecimalText,
   partsApi,
   productsApi,
 } from './model';
@@ -328,20 +330,20 @@ function openPartModal(mode: 'add' | 'modify', existing?: Part): void {
     if (priceVal === '') mark(price.input, 'Price is required.');
     else {
       const p = Number(priceVal);
-      if (Number.isNaN(p) || p < 0) mark(price.input, 'Price must be a non-negative number.');
+      if (!isDecimalText(priceVal) || p < 0) mark(price.input, 'Price must be a non-negative number.');
     }
 
     const invVal = inventory.input.value.trim();
     if (invVal === '') mark(inventory.input, 'Inventory is required.');
-    else if (!Number.isInteger(Number(invVal))) mark(inventory.input, 'Inventory must be an integer.');
+    else if (!isIntegerText(invVal)) mark(inventory.input, 'Inventory must be an integer.');
 
     const maxVal = max.input.value.trim();
     if (maxVal === '') mark(max.input, 'Max is required.');
-    else if (!Number.isInteger(Number(maxVal))) mark(max.input, 'Max must be an integer.');
+    else if (!isIntegerText(maxVal)) mark(max.input, 'Max must be an integer.');
 
     const minVal = min.input.value.trim();
     if (minVal === '') mark(min.input, 'Min is required.');
-    else if (!Number.isInteger(Number(minVal))) mark(min.input, 'Min must be an integer.');
+    else if (!isIntegerText(minVal)) mark(min.input, 'Min must be an integer.');
 
     const values: FieldValues = {
       name: name.input.value,
@@ -360,7 +362,7 @@ function openPartModal(mode: 'add' | 'modify', existing?: Part): void {
     if (inhouseRadio.checked) {
       const mVal = variableInput.value.trim();
       if (mVal === '') mark(variableInput, 'Machine ID is required.');
-      else if (!Number.isInteger(Number(mVal))) mark(variableInput, 'Machine ID must be an integer.');
+      else if (!isIntegerText(mVal)) mark(variableInput, 'Machine ID must be an integer.');
     } else {
       if (variableInput.value.trim() === '') mark(variableInput, 'Company Name is required.');
     }
@@ -491,7 +493,10 @@ function openProductModal(mode: 'add' | 'modify', existing?: Product): void {
   const addAssoc = () => {
     if (selCandidate == null) { alert('Please select a row.'); return; }
     const part = candidateView.find((p) => p.partId === selCandidate);
-    if (part) { assoc.push(part); renderAssocTables(); }
+    if (!part) return;
+    if (assoc.some((p) => p.partId === part.partId)) { alert('This part is already associated with the product.'); return; }
+    assoc.push(part);
+    renderAssocTables();
   };
   const removeAssoc = () => {
     if (selAssoc == null) { alert('Nothing Selected! Please make a selection.'); return; }
@@ -521,20 +526,20 @@ function openProductModal(mode: 'add' | 'modify', existing?: Product): void {
     if (priceVal === '') mark(price.input, 'Price is required.');
     else {
       const p = Number(priceVal);
-      if (Number.isNaN(p) || p < 0) mark(price.input, 'Price must be a non-negative number.');
+      if (!isDecimalText(priceVal) || p < 0) mark(price.input, 'Price must be a non-negative number.');
     }
 
     const invVal = inventory.input.value.trim();
     if (invVal === '') mark(inventory.input, 'Inventory is required.');
-    else if (!Number.isInteger(Number(invVal))) mark(inventory.input, 'Inventory must be an integer.');
+    else if (!isIntegerText(invVal)) mark(inventory.input, 'Inventory must be an integer.');
 
     const maxVal = max.input.value.trim();
     if (maxVal === '') mark(max.input, 'Max is required.');
-    else if (!Number.isInteger(Number(maxVal))) mark(max.input, 'Max must be an integer.');
+    else if (!isIntegerText(maxVal)) mark(max.input, 'Max must be an integer.');
 
     const minVal = min.input.value.trim();
     if (minVal === '') mark(min.input, 'Min is required.');
-    else if (!Number.isInteger(Number(minVal))) mark(min.input, 'Min must be an integer.');
+    else if (!isIntegerText(minVal)) mark(min.input, 'Min must be an integer.');
 
     const values: FieldValues = {
       name: name.input.value,

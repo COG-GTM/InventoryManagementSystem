@@ -7,6 +7,9 @@ services:
       - NODE_ENV=production
       - PORT=3001
       - CORS_ORIGIN=http://localhost:8081
+      - DATABASE_URL=/data/ims.db
+    volumes:
+      - ims-data:/data
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3001/api/parts >/dev/null 2>&1"]
       interval: 10s
@@ -23,3 +26,6 @@ services:
     depends_on:
       server:
         condition: service_healthy
+
+volumes:
+  ims-data:

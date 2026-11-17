@@ -211,4 +211,26 @@ describe('Parts API', () => {
     expect(product.body.associatedParts).toHaveLength(1);
     expect(product.body.associatedParts[0].partId).toBe(1);
   });
+
+  it('treats search wildcards literally', async () => {
+    for (const term of ['%', '_']) {
+      const res = await request(app).get(`/api/parts?search=${encodeURIComponent(term)}`);
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveLength(0);
+    }
+  });
+
+  it('rejects hex and exponent numeric strings', async () => {
+    for (const machineId of ['0x10', '1e3']) {
+      const res = await request(app).post('/api/parts').send({
+        name: 'Bolt', price: 1, inStock: 5, min: 1, max: 10, kind: 'inhouse', machineId,
+      });
+      expect(res.status).toBe(400);
+    }
+    const ok = await request(app).post('/api/parts').send({
+      name: 'Bolt', price: '1.50', inStock: '5', min: '1', max: '10', kind: 'inhouse', machineId: '16',
+    });
+    expect(ok.status).toBe(201);
+    expect(ok.body.machineId).toBe(16);
+  });
 });

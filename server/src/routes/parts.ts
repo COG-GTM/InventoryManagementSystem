@@ -12,7 +12,7 @@ export function createPartsRouter(db: DB) {
       ? (db.prepare('SELECT * FROM parts WHERE deleted = 0 ORDER BY partId').all() as PartRow[])
       : (db.prepare(`
           SELECT * FROM parts WHERE deleted = 0
-            AND (LOWER(name) LIKE '%' || LOWER(?) || '%' OR CAST(partId AS TEXT) = ?)
+            AND (instr(LOWER(name), LOWER(?)) > 0 OR CAST(partId AS TEXT) = ?)
           ORDER BY partId
         `).all(term, term) as PartRow[]);
     res.json(rows.map(partRowToPart));
