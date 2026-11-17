@@ -12,6 +12,7 @@ export function initDb(dbPath: string = process.env.DATABASE_URL || 'ims.db'): D
   }
 
   const db = new Database(dbPath);
+  db.pragma('journal_mode = WAL');
   createTables(db);
   seedIfEmpty(db);
   return db;
