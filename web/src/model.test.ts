@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Inventory, searchParts, searchProducts, validateItem } from './model';
+import { Inventory, searchParts, searchProducts, validateItem, isIntegerText, isDecimalText } from './model';
 
 describe('Inventory seed data', () => {
   it('seeds 3 parts and 3 products matching the legacy fakeData()', () => {
@@ -44,5 +44,18 @@ describe('validation', () => {
     expect(validateItem({ name: 'x', inventory: '99', price: '1', min: '1', max: '10' }))
       .toBe('Inventory must be between minimum and maximum.');
     expect(validateItem({ name: 'x', inventory: '5', price: '1', min: '1', max: '10' })).toBeNull();
+  });
+});
+
+describe('numeric text', () => {
+  it('accepts plain decimal integers only', () => {
+    expect(isIntegerText(' 42 ')).toBe(true);
+    expect(isIntegerText('-3')).toBe(true);
+    for (const v of ['0x10', '1e3', '1.5', '', 'abc']) expect(isIntegerText(v)).toBe(false);
+  });
+
+  it('accepts plain decimal prices only', () => {
+    expect(isDecimalText('25.25')).toBe(true);
+    for (const v of ['0x10', '1e3', 'Infinity', '']) expect(isDecimalText(v)).toBe(false);
   });
 });

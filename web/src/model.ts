@@ -183,6 +183,9 @@ export const productsApi = {
   remove: (id: number) => apiRequest<void>(`/api/products/${id}`, { method: 'DELETE' }),
 };
 
+export const isIntegerText = (v: string): boolean => /^[+-]?\d+$/.test(v.trim());
+export const isDecimalText = (v: string): boolean => /^[+-]?\d+(\.\d+)?$/.test(v.trim());
+
 // Validation ported from the save handlers: min <= max, and min <= inventory <= max.
 export function validateItem(v: FieldValues): string | null {
   const min = parseInt(v.min, 10);

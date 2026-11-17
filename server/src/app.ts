@@ -15,7 +15,11 @@ export function createApp(dbPath?: string) {
   app.use('/api/products', createProductsRouter(db));
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  app.use((err: Error & { type?: string }, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    if (err.type === 'entity.parse.failed') {
+      res.status(400).json({ error: 'Invalid JSON body.' });
+      return;
+    }
     // eslint-disable-next-line no-console
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });

@@ -132,4 +132,35 @@ describe('Products API', () => {
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/inventory/i);
   });
+
+  it('ignores duplicate associatedPartIds instead of failing', async () => {
+    const res = await request(app).post('/api/products').send({
+      name: 'Car', price: 100, inStock: 1, min: 1, max: 5, associatedPartIds: [1, 1, 2],
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.associatedParts.map((p: { partId: number }) => p.partId)).toEqual([1, 2]);
+
+    const put = await request(app).put(`/api/products/${res.body.productId}`).send({
+      name: 'Car', price: 100, inStock: 1, min: 1, max: 5, associatedPartIds: [3, 3],
+    });
+    expect(put.status).toBe(200);
+    expect(put.body.associatedParts).toHaveLength(1);
+  });
+
+  it('returns 400 for a malformed JSON body', async () => {
+    const res = await request(app)
+      .post('/api/products')
+      .set('Content-Type', 'application/json')
+      .send('{"name": ');
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/json/i);
+  });
+
+  it('treats search wildcards literally', async () => {
+    for (const term of ['%', '_']) {
+      const res = await request(app).get(`/api/products?search=${encodeURIComponent(term)}`);
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveLength(0);
+    }
+  });
 });

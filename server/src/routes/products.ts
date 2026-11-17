@@ -12,7 +12,7 @@ export function createProductsRouter(db: DB) {
       ? (db.prepare('SELECT * FROM products ORDER BY productId').all() as ProductRow[])
       : (db.prepare(`
           SELECT * FROM products
-          WHERE (LOWER(name) LIKE '%' || LOWER(?) || '%' OR CAST(productId AS TEXT) = ?)
+          WHERE (instr(LOWER(name), LOWER(?)) > 0 OR CAST(productId AS TEXT) = ?)
           ORDER BY productId
         `).all(term, term) as ProductRow[]);
 
