@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getProductWithParts, type DB } from '../db.js';
+import { attachAssociatedParts, getProductWithParts, type DB } from '../db.js';
 import type { ProductRow } from '../types.js';
 import { validateProduct } from '../validation.js';
 
@@ -16,8 +16,7 @@ export function createProductsRouter(db: DB) {
           ORDER BY productId
         `).all(term, term) as ProductRow[]);
 
-    const products = rows.map((row) => getProductWithParts(db, row.productId));
-    res.json(products);
+    res.json(attachAssociatedParts(db, rows));
   });
 
   router.get('/:id', (req, res) => {
