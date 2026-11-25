@@ -288,6 +288,7 @@ test('adding the same part to a product twice is blocked', async ({ page }) => {
   const productName = `Shelf${suffix}`;
 
   await addPart(page, { name: partName, inStock: '4', price: '0.25', min: '1', max: '10', kind: 'Outsourced', variable: 'Acme' });
+  await expect(partsPanel(page).locator('tbody tr').filter({ hasText: partName })).toBeVisible();
 
   await productsPanel(page).getByRole('button', { name: 'Add' }).click();
   const m = modal(page);
@@ -313,3 +314,31 @@ test('adding the same part to a product twice is blocked', async ({ page }) => {
   await expect(productsPanel(page).locator('tbody tr').filter({ hasText: productName })).toBeVisible();
 });
 
+
+test('double-clicking Save while the request is pending creates one part', async ({ page }) => {
+  await page.goto('/');
+  const name = `Once ${Date.now()}`;
+  let posts = 0;
+  await page.route('**/api/parts', async (route) => {
+    if (route.request().method() !== 'POST') return route.continue();
+    posts += 1;
+    await new Promise((r) => setTimeout(r, 500));
+    return route.continue();
+  });
+
+  const parts = partsPanel(page);
+  await parts.getByRole('button', { name: 'Add' }).click();
+  const m = modal(page);
+  await selectKind(m, 'Outsourced');
+  await fillField(m, 'Name', name);
+  await fillField(m, 'Inventory (In Stock)', '5.0');
+  await fillField(m, 'Price / Cost', '.5');
+  await fillField(m, 'Min', '1');
+  await fillField(m, 'Max', '10');
+  await fillField(m, 'Company Name', 'Acme');
+  const save = m.getByRole('button', { name: 'Save' });
+  await save.dblclick();
+  await expect(m).toBeHidden();
+  await expect(parts.locator('tbody tr').filter({ hasText: name })).toHaveCount(1);
+  expect(posts).toBe(1);
+});
