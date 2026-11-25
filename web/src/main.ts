@@ -53,9 +53,9 @@ async function refresh(): Promise<void> {
       productsTerm ? productsApi.list(productsTerm) : null,
     ]);
     if (partsHits?.length) partsView = partsHits;
-    else { partsView = allParts; partsSearchText = partsAppliedSearch = ''; }
+    else { partsView = allParts; if (partsTerm) partsSearchText = partsAppliedSearch = ''; }
     if (productsHits?.length) productsView = productsHits;
-    else { productsView = allProducts; productsSearchText = productsAppliedSearch = ''; }
+    else { productsView = allProducts; if (productsTerm) productsSearchText = productsAppliedSearch = ''; }
     if (!partsView.some((p) => p.partId === selectedPartId)) selectedPartId = null;
     if (!productsView.some((p) => p.productId === selectedProductId)) selectedProductId = null;
     render();
