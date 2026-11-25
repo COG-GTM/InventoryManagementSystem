@@ -48,6 +48,14 @@ docker compose up --build
 - Backend: `http://localhost:3001`
 - Frontend: `http://localhost:8081`
 - Data: SQLite at `/data/ims.db` in the `ims-data` volume, kept across `docker compose down`/`up` (use `docker compose down -v` to reset).
+- Upgrading a deployment that predates the volume (database at `/app/ims.db` inside the container): back it up **before** pulling this version, then restore it into the volume:
+  ```bash
+  docker compose cp server:/app/ims.db ./ims-backup.db   # old version still running
+  git pull && docker compose up --build -d --wait
+  docker compose stop server
+  docker compose cp ./ims-backup.db server:/data/ims.db
+  docker compose start server
+  ```
 
 ## Original project requirements
 

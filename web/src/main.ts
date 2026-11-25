@@ -40,9 +40,20 @@ function el<K extends keyof HTMLElementTagNameMap>(
 
 async function refresh(): Promise<void> {
   try {
-    [allParts, allProducts] = await Promise.all([partsApi.list(), productsApi.list()]);
-    partsView = allParts;
-    productsView = allProducts;
+    const partsTerm = partsSearchText.trim();
+    const productsTerm = productsSearchText.trim();
+    let partsHits: Part[] | null;
+    let productsHits: Product[] | null;
+    [allParts, allProducts, partsHits, productsHits] = await Promise.all([
+      partsApi.list(),
+      productsApi.list(),
+      partsTerm ? partsApi.list(partsTerm) : null,
+      productsTerm ? productsApi.list(productsTerm) : null,
+    ]);
+    if (partsHits?.length) partsView = partsHits;
+    else { partsView = allParts; partsSearchText = ''; }
+    if (productsHits?.length) productsView = productsHits;
+    else { productsView = allProducts; productsSearchText = ''; }
     render();
   } catch (err) {
     alert(err instanceof Error ? err.message : 'Failed to load inventory.');
@@ -314,6 +325,7 @@ function openPartModal(mode: 'add' | 'modify', existing?: Part): void {
 
   const errorBox = el('p', { className: 'form-error hidden' });
   const saveBtn = el('button', { className: 'btn-primary', textContent: 'Save' });
+  let submitting = false;
   const inputs = [name.input, inventory.input, price.input, max.input, min.input, variableInput];
 
   const validate = (): string | null => {
@@ -367,7 +379,7 @@ function openPartModal(mode: 'add' | 'modify', existing?: Part): void {
       if (variableInput.value.trim() === '') mark(variableInput, 'Company Name is required.');
     }
 
-    saveBtn.disabled = !!firstError;
+    saveBtn.disabled = submitting || !!firstError;
     return firstError;
   };
 
@@ -405,6 +417,7 @@ function openPartModal(mode: 'add' | 'modify', existing?: Part): void {
   );
 
   saveBtn.onclick = async () => {
+    if (submitting) return;
     const err = validate();
     if (err) { errorBox.textContent = err; errorBox.classList.remove('hidden'); return; }
 
@@ -415,6 +428,8 @@ function openPartModal(mode: 'add' | 'modify', existing?: Part): void {
       max: parseInt(max.input.value.trim(), 10),
       min: parseInt(min.input.value.trim(), 10),
     };
+    submitting = true;
+    saveBtn.disabled = true;
     try {
       const payload: PartPayload = inhouseRadio.checked
         ? { ...base, kind: 'inhouse' as const, machineId: parseInt(variableInput.value.trim(), 10) }
@@ -427,6 +442,8 @@ function openPartModal(mode: 'add' | 'modify', existing?: Part): void {
     } catch (e) {
       errorBox.textContent = e instanceof Error ? e.message : 'Save failed.';
       errorBox.classList.remove('hidden');
+      submitting = false;
+      validate();
     }
   };
 }
@@ -510,6 +527,7 @@ function openProductModal(mode: 'add' | 'modify', existing?: Product): void {
 
   const errorBox = el('p', { className: 'form-error hidden' });
   const saveBtn = el('button', { className: 'btn-primary', textContent: 'Save' });
+  let submitting = false;
   const inputs = [name.input, inventory.input, price.input, max.input, min.input];
 
   const validate = (): string | null => {
@@ -555,7 +573,7 @@ function openProductModal(mode: 'add' | 'modify', existing?: Product): void {
       firstError ??= itemErr;
     }
 
-    saveBtn.disabled = !!firstError;
+    saveBtn.disabled = submitting || !!firstError;
     return firstError;
   };
 
@@ -606,6 +624,7 @@ function openProductModal(mode: 'add' | 'modify', existing?: Product): void {
   renderAssocTables();
 
   saveBtn.onclick = async () => {
+    if (submitting) return;
     const err = validate();
     if (err) { errorBox.textContent = err; errorBox.classList.remove('hidden'); return; }
 
@@ -617,6 +636,8 @@ function openProductModal(mode: 'add' | 'modify', existing?: Product): void {
       min: parseInt(min.input.value.trim(), 10),
       associatedPartIds: assoc.map((p) => p.partId),
     };
+    submitting = true;
+    saveBtn.disabled = true;
     try {
       if (mode === 'add') await productsApi.create(payload);
       else if (existing) await productsApi.update(existing.productId, payload);
@@ -625,6 +646,8 @@ function openProductModal(mode: 'add' | 'modify', existing?: Product): void {
     } catch (e) {
       errorBox.textContent = e instanceof Error ? e.message : 'Save failed.';
       errorBox.classList.remove('hidden');
+      submitting = false;
+      validate();
     }
   };
 }

@@ -13,11 +13,22 @@ export function createApp(dbPath?: string) {
 
   app.use('/api/parts', createPartsRouter(db));
   app.use('/api/products', createProductsRouter(db));
+  app.use('/api', (_req, res) => {
+    res.status(404).json({ error: 'Not found.' });
+  });
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  app.use((err: Error & { type?: string }, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  app.use((err: Error & { type?: string; status?: number }, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
     if (err.type === 'entity.parse.failed') {
       res.status(400).json({ error: 'Invalid JSON body.' });
+      return;
+    }
+    if (err.type === 'entity.too.large') {
+      res.status(413).json({ error: 'Request body too large.' });
+      return;
+    }
+    if (err.status && err.status >= 400 && err.status < 500) {
+      res.status(err.status).json({ error: err.message });
       return;
     }
     // eslint-disable-next-line no-console

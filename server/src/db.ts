@@ -12,6 +12,9 @@ export function initDb(dbPath: string = process.env.DATABASE_URL || 'ims.db'): D
   }
 
   const db = new Database(dbPath);
+  db.function('unicode_lower', { deterministic: true }, (v: unknown) =>
+    typeof v === 'string' ? v.toLowerCase() : v,
+  );
   createTables(db);
   seedIfEmpty(db);
   return db;
@@ -50,6 +53,8 @@ function createTables(db: DB): void {
 }
 
 function seedIfEmpty(db: DB): void {
+  if (db.pragma('user_version', { simple: true }) !== 0) return;
+  db.pragma('user_version = 1');
   const { total } = db.prepare('SELECT COUNT(*) AS total FROM parts').get() as { total: number };
   if (total > 0) return;
 
