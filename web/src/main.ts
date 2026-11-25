@@ -21,6 +21,8 @@ let selectedPartId: number | null = null;
 let selectedProductId: number | null = null;
 let partsSearchText = '';
 let productsSearchText = '';
+let partsAppliedSearch = '';
+let productsAppliedSearch = '';
 
 const app = document.getElementById('app')!;
 
@@ -40,8 +42,8 @@ function el<K extends keyof HTMLElementTagNameMap>(
 
 async function refresh(): Promise<void> {
   try {
-    const partsTerm = partsSearchText.trim();
-    const productsTerm = productsSearchText.trim();
+    const partsTerm = partsAppliedSearch;
+    const productsTerm = productsAppliedSearch;
     let partsHits: Part[] | null;
     let productsHits: Product[] | null;
     [allParts, allProducts, partsHits, productsHits] = await Promise.all([
@@ -51,9 +53,11 @@ async function refresh(): Promise<void> {
       productsTerm ? productsApi.list(productsTerm) : null,
     ]);
     if (partsHits?.length) partsView = partsHits;
-    else { partsView = allParts; partsSearchText = ''; }
+    else { partsView = allParts; partsSearchText = partsAppliedSearch = ''; }
     if (productsHits?.length) productsView = productsHits;
-    else { productsView = allProducts; productsSearchText = ''; }
+    else { productsView = allProducts; productsSearchText = productsAppliedSearch = ''; }
+    if (!partsView.some((p) => p.partId === selectedPartId)) selectedPartId = null;
+    if (!productsView.some((p) => p.productId === selectedProductId)) selectedProductId = null;
     render();
   } catch (err) {
     alert(err instanceof Error ? err.message : 'Failed to load inventory.');
@@ -88,8 +92,10 @@ function partsPanel(): HTMLElement {
     if (term !== '' && result.length === 0) {
       alert('Nothing found.');
       partsView = allParts;
+      partsAppliedSearch = '';
     } else {
       partsView = result;
+      partsAppliedSearch = term;
     }
     selectedPartId = null;
     render();
@@ -179,8 +185,10 @@ function productsPanel(): HTMLElement {
     if (term !== '' && result.length === 0) {
       alert('Nothing found.');
       productsView = allProducts;
+      productsAppliedSearch = '';
     } else {
       productsView = result;
+      productsAppliedSearch = term;
     }
     selectedProductId = null;
     render();
@@ -424,15 +432,15 @@ function openPartModal(mode: 'add' | 'modify', existing?: Part): void {
     const base = {
       name: name.input.value.trim(),
       price: Number(price.input.value.trim()),
-      inStock: parseInt(inventory.input.value.trim(), 10),
-      max: parseInt(max.input.value.trim(), 10),
-      min: parseInt(min.input.value.trim(), 10),
+      inStock: Number(inventory.input.value.trim()),
+      max: Number(max.input.value.trim()),
+      min: Number(min.input.value.trim()),
     };
     submitting = true;
     saveBtn.disabled = true;
     try {
       const payload: PartPayload = inhouseRadio.checked
-        ? { ...base, kind: 'inhouse' as const, machineId: parseInt(variableInput.value.trim(), 10) }
+        ? { ...base, kind: 'inhouse' as const, machineId: Number(variableInput.value.trim()) }
         : { ...base, kind: 'outsourced' as const, companyName: variableInput.value.trim() };
 
       if (mode === 'add') await partsApi.create(payload);
@@ -631,9 +639,9 @@ function openProductModal(mode: 'add' | 'modify', existing?: Product): void {
     const payload: ProductPayload = {
       name: name.input.value.trim(),
       price: Number(price.input.value.trim()),
-      inStock: parseInt(inventory.input.value.trim(), 10),
-      max: parseInt(max.input.value.trim(), 10),
-      min: parseInt(min.input.value.trim(), 10),
+      inStock: Number(inventory.input.value.trim()),
+      max: Number(max.input.value.trim()),
+      min: Number(min.input.value.trim()),
       associatedPartIds: assoc.map((p) => p.partId),
     };
     submitting = true;
