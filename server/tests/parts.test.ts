@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { createApp } from '../src/app.js';
 
 describe('Parts API', () => {
@@ -210,5 +213,68 @@ describe('Parts API', () => {
     expect(product.status).toBe(200);
     expect(product.body.associatedParts).toHaveLength(1);
     expect(product.body.associatedParts[0].partId).toBe(1);
+  });
+
+  it('treats search wildcards literally', async () => {
+    for (const term of ['%', '_']) {
+      const res = await request(app).get(`/api/parts?search=${encodeURIComponent(term)}`);
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveLength(0);
+    }
+  });
+
+  it('rejects hex and exponent numeric strings', async () => {
+    for (const machineId of ['0x10', '1e3']) {
+      const res = await request(app).post('/api/parts').send({
+        name: 'Bolt', price: 1, inStock: 5, min: 1, max: 10, kind: 'inhouse', machineId,
+      });
+      expect(res.status).toBe(400);
+    }
+    const ok = await request(app).post('/api/parts').send({
+      name: 'Bolt', price: '1.50', inStock: '5', min: '1', max: '10', kind: 'inhouse', machineId: '16',
+    });
+    expect(ok.status).toBe(201);
+    expect(ok.body.machineId).toBe(16);
+  });
+
+  it('accepts decimal strings like ".5", "12." and "5.0"', async () => {
+    const res = await request(app).post('/api/parts').send({
+      name: 'Bolt', price: '.5', inStock: '5.0', min: '1', max: '12.', kind: 'outsourced', companyName: 'Acme',
+    });
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({ price: 0.5, inStock: 5, max: 12 });
+  });
+
+  it('searches accented names case-insensitively', async () => {
+    await request(app).post('/api/parts').send({
+      name: 'Écrou', price: 1, inStock: 1, min: 1, max: 5, kind: 'outsourced', companyName: 'Acme',
+    });
+    const res = await request(app).get('/api/parts').query({ search: 'écr' });
+    expect(res.body.map((p: { name: string }) => p.name)).toEqual(['Écrou']);
+  });
+
+  it('returns JSON 404 for unknown API routes and 413 for oversized bodies', async () => {
+    const notFound = await request(app).get('/api/unknown');
+    expect(notFound.status).toBe(404);
+    expect(notFound.body).toEqual({ error: 'Not found.' });
+
+    const tooLarge = await request(app).post('/api/parts').send({ name: 'x'.repeat(200_000) });
+    expect(tooLarge.status).toBe(413);
+    expect(tooLarge.body).toEqual({ error: 'Request body too large.' });
+  });
+
+  it('does not reseed after every part is deleted and the server restarts', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ims-'));
+    const dbPath = path.join(dir, 'ims.db');
+    try {
+      const first = createApp(dbPath);
+      await request(first).delete('/api/products/1');
+      for (const id of [1, 2, 3]) expect((await request(first).delete(`/api/parts/${id}`)).status).toBe(204);
+
+      const restarted = createApp(dbPath);
+      expect((await request(restarted).get('/api/parts')).body).toEqual([]);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

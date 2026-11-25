@@ -10,6 +10,8 @@ function parseString(value: unknown): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+const DECIMAL_PATTERN = /^[+-]?(\d+(\.\d*)?|\.\d+)$/;
+
 function parseNumber(value: unknown, integerOnly: boolean): number | null {
   if (typeof value === 'number') {
     if (Number.isNaN(value) || !Number.isFinite(value)) return null;
@@ -19,7 +21,7 @@ function parseNumber(value: unknown, integerOnly: boolean): number | null {
 
   if (typeof value === 'string') {
     const trimmed = value.trim();
-    if (trimmed === '') return null;
+    if (!DECIMAL_PATTERN.test(trimmed)) return null;
     const num = Number(trimmed);
     if (Number.isNaN(num) || !Number.isFinite(num)) return null;
     if (integerOnly && !Number.isInteger(num)) return null;
@@ -114,13 +116,15 @@ export function validateProduct(
     }
 
     const checkPart = db.prepare('SELECT partId FROM parts WHERE partId = ?');
+    const seen = new Set<number>();
     for (const id of b.associatedPartIds) {
       const parsed = parseNumber(id, true);
       if (parsed === null) return { error: 'Associated part IDs must be integers.' };
       const existing = checkPart.get(parsed) as { partId: number } | undefined;
       if (!existing) return { error: 'Associated part IDs must reference existing parts.' };
-      associatedPartIds.push(parsed);
+      seen.add(parsed);
     }
+    associatedPartIds.push(...seen);
   }
 
   return { product: { name, price, inStock, min, max }, associatedPartIds };

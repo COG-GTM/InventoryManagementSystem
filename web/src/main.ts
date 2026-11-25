@@ -7,6 +7,8 @@ import {
   FieldValues,
   companyOrMachine,
   validateItem,
+  isIntegerText,
+  isDecimalText,
   partsApi,
   productsApi,
 } from './model';
@@ -19,6 +21,8 @@ let selectedPartId: number | null = null;
 let selectedProductId: number | null = null;
 let partsSearchText = '';
 let productsSearchText = '';
+let partsAppliedSearch = '';
+let productsAppliedSearch = '';
 
 const app = document.getElementById('app')!;
 
@@ -38,9 +42,22 @@ function el<K extends keyof HTMLElementTagNameMap>(
 
 async function refresh(): Promise<void> {
   try {
-    [allParts, allProducts] = await Promise.all([partsApi.list(), productsApi.list()]);
-    partsView = allParts;
-    productsView = allProducts;
+    const partsTerm = partsAppliedSearch;
+    const productsTerm = productsAppliedSearch;
+    let partsHits: Part[] | null;
+    let productsHits: Product[] | null;
+    [allParts, allProducts, partsHits, productsHits] = await Promise.all([
+      partsApi.list(),
+      productsApi.list(),
+      partsTerm ? partsApi.list(partsTerm) : null,
+      productsTerm ? productsApi.list(productsTerm) : null,
+    ]);
+    if (partsHits?.length) partsView = partsHits;
+    else { partsView = allParts; if (partsTerm) partsSearchText = partsAppliedSearch = ''; }
+    if (productsHits?.length) productsView = productsHits;
+    else { productsView = allProducts; if (productsTerm) productsSearchText = productsAppliedSearch = ''; }
+    if (!partsView.some((p) => p.partId === selectedPartId)) selectedPartId = null;
+    if (!productsView.some((p) => p.productId === selectedProductId)) selectedProductId = null;
     render();
   } catch (err) {
     alert(err instanceof Error ? err.message : 'Failed to load inventory.');
@@ -75,8 +92,10 @@ function partsPanel(): HTMLElement {
     if (term !== '' && result.length === 0) {
       alert('Nothing found.');
       partsView = allParts;
+      partsAppliedSearch = '';
     } else {
       partsView = result;
+      partsAppliedSearch = term;
     }
     selectedPartId = null;
     render();
@@ -166,8 +185,10 @@ function productsPanel(): HTMLElement {
     if (term !== '' && result.length === 0) {
       alert('Nothing found.');
       productsView = allProducts;
+      productsAppliedSearch = '';
     } else {
       productsView = result;
+      productsAppliedSearch = term;
     }
     selectedProductId = null;
     render();
@@ -312,6 +333,7 @@ function openPartModal(mode: 'add' | 'modify', existing?: Part): void {
 
   const errorBox = el('p', { className: 'form-error hidden' });
   const saveBtn = el('button', { className: 'btn-primary', textContent: 'Save' });
+  let submitting = false;
   const inputs = [name.input, inventory.input, price.input, max.input, min.input, variableInput];
 
   const validate = (): string | null => {
@@ -328,20 +350,20 @@ function openPartModal(mode: 'add' | 'modify', existing?: Part): void {
     if (priceVal === '') mark(price.input, 'Price is required.');
     else {
       const p = Number(priceVal);
-      if (Number.isNaN(p) || p < 0) mark(price.input, 'Price must be a non-negative number.');
+      if (!isDecimalText(priceVal) || p < 0) mark(price.input, 'Price must be a non-negative number.');
     }
 
     const invVal = inventory.input.value.trim();
     if (invVal === '') mark(inventory.input, 'Inventory is required.');
-    else if (!Number.isInteger(Number(invVal))) mark(inventory.input, 'Inventory must be an integer.');
+    else if (!isIntegerText(invVal)) mark(inventory.input, 'Inventory must be an integer.');
 
     const maxVal = max.input.value.trim();
     if (maxVal === '') mark(max.input, 'Max is required.');
-    else if (!Number.isInteger(Number(maxVal))) mark(max.input, 'Max must be an integer.');
+    else if (!isIntegerText(maxVal)) mark(max.input, 'Max must be an integer.');
 
     const minVal = min.input.value.trim();
     if (minVal === '') mark(min.input, 'Min is required.');
-    else if (!Number.isInteger(Number(minVal))) mark(min.input, 'Min must be an integer.');
+    else if (!isIntegerText(minVal)) mark(min.input, 'Min must be an integer.');
 
     const values: FieldValues = {
       name: name.input.value,
@@ -360,12 +382,12 @@ function openPartModal(mode: 'add' | 'modify', existing?: Part): void {
     if (inhouseRadio.checked) {
       const mVal = variableInput.value.trim();
       if (mVal === '') mark(variableInput, 'Machine ID is required.');
-      else if (!Number.isInteger(Number(mVal))) mark(variableInput, 'Machine ID must be an integer.');
+      else if (!isIntegerText(mVal)) mark(variableInput, 'Machine ID must be an integer.');
     } else {
       if (variableInput.value.trim() === '') mark(variableInput, 'Company Name is required.');
     }
 
-    saveBtn.disabled = !!firstError;
+    saveBtn.disabled = submitting || !!firstError;
     return firstError;
   };
 
@@ -403,19 +425,22 @@ function openPartModal(mode: 'add' | 'modify', existing?: Part): void {
   );
 
   saveBtn.onclick = async () => {
+    if (submitting) return;
     const err = validate();
     if (err) { errorBox.textContent = err; errorBox.classList.remove('hidden'); return; }
 
     const base = {
       name: name.input.value.trim(),
       price: Number(price.input.value.trim()),
-      inStock: parseInt(inventory.input.value.trim(), 10),
-      max: parseInt(max.input.value.trim(), 10),
-      min: parseInt(min.input.value.trim(), 10),
+      inStock: Number(inventory.input.value.trim()),
+      max: Number(max.input.value.trim()),
+      min: Number(min.input.value.trim()),
     };
+    submitting = true;
+    saveBtn.disabled = true;
     try {
       const payload: PartPayload = inhouseRadio.checked
-        ? { ...base, kind: 'inhouse' as const, machineId: parseInt(variableInput.value.trim(), 10) }
+        ? { ...base, kind: 'inhouse' as const, machineId: Number(variableInput.value.trim()) }
         : { ...base, kind: 'outsourced' as const, companyName: variableInput.value.trim() };
 
       if (mode === 'add') await partsApi.create(payload);
@@ -425,6 +450,8 @@ function openPartModal(mode: 'add' | 'modify', existing?: Part): void {
     } catch (e) {
       errorBox.textContent = e instanceof Error ? e.message : 'Save failed.';
       errorBox.classList.remove('hidden');
+      submitting = false;
+      validate();
     }
   };
 }
@@ -491,7 +518,10 @@ function openProductModal(mode: 'add' | 'modify', existing?: Product): void {
   const addAssoc = () => {
     if (selCandidate == null) { alert('Please select a row.'); return; }
     const part = candidateView.find((p) => p.partId === selCandidate);
-    if (part) { assoc.push(part); renderAssocTables(); }
+    if (!part) return;
+    if (assoc.some((p) => p.partId === part.partId)) { alert('This part is already associated with the product.'); return; }
+    assoc.push(part);
+    renderAssocTables();
   };
   const removeAssoc = () => {
     if (selAssoc == null) { alert('Nothing Selected! Please make a selection.'); return; }
@@ -505,6 +535,7 @@ function openProductModal(mode: 'add' | 'modify', existing?: Product): void {
 
   const errorBox = el('p', { className: 'form-error hidden' });
   const saveBtn = el('button', { className: 'btn-primary', textContent: 'Save' });
+  let submitting = false;
   const inputs = [name.input, inventory.input, price.input, max.input, min.input];
 
   const validate = (): string | null => {
@@ -521,20 +552,20 @@ function openProductModal(mode: 'add' | 'modify', existing?: Product): void {
     if (priceVal === '') mark(price.input, 'Price is required.');
     else {
       const p = Number(priceVal);
-      if (Number.isNaN(p) || p < 0) mark(price.input, 'Price must be a non-negative number.');
+      if (!isDecimalText(priceVal) || p < 0) mark(price.input, 'Price must be a non-negative number.');
     }
 
     const invVal = inventory.input.value.trim();
     if (invVal === '') mark(inventory.input, 'Inventory is required.');
-    else if (!Number.isInteger(Number(invVal))) mark(inventory.input, 'Inventory must be an integer.');
+    else if (!isIntegerText(invVal)) mark(inventory.input, 'Inventory must be an integer.');
 
     const maxVal = max.input.value.trim();
     if (maxVal === '') mark(max.input, 'Max is required.');
-    else if (!Number.isInteger(Number(maxVal))) mark(max.input, 'Max must be an integer.');
+    else if (!isIntegerText(maxVal)) mark(max.input, 'Max must be an integer.');
 
     const minVal = min.input.value.trim();
     if (minVal === '') mark(min.input, 'Min is required.');
-    else if (!Number.isInteger(Number(minVal))) mark(min.input, 'Min must be an integer.');
+    else if (!isIntegerText(minVal)) mark(min.input, 'Min must be an integer.');
 
     const values: FieldValues = {
       name: name.input.value,
@@ -550,7 +581,7 @@ function openProductModal(mode: 'add' | 'modify', existing?: Product): void {
       firstError ??= itemErr;
     }
 
-    saveBtn.disabled = !!firstError;
+    saveBtn.disabled = submitting || !!firstError;
     return firstError;
   };
 
@@ -601,17 +632,20 @@ function openProductModal(mode: 'add' | 'modify', existing?: Product): void {
   renderAssocTables();
 
   saveBtn.onclick = async () => {
+    if (submitting) return;
     const err = validate();
     if (err) { errorBox.textContent = err; errorBox.classList.remove('hidden'); return; }
 
     const payload: ProductPayload = {
       name: name.input.value.trim(),
       price: Number(price.input.value.trim()),
-      inStock: parseInt(inventory.input.value.trim(), 10),
-      max: parseInt(max.input.value.trim(), 10),
-      min: parseInt(min.input.value.trim(), 10),
+      inStock: Number(inventory.input.value.trim()),
+      max: Number(max.input.value.trim()),
+      min: Number(min.input.value.trim()),
       associatedPartIds: assoc.map((p) => p.partId),
     };
+    submitting = true;
+    saveBtn.disabled = true;
     try {
       if (mode === 'add') await productsApi.create(payload);
       else if (existing) await productsApi.update(existing.productId, payload);
@@ -620,6 +654,8 @@ function openProductModal(mode: 'add' | 'modify', existing?: Product): void {
     } catch (e) {
       errorBox.textContent = e instanceof Error ? e.message : 'Save failed.';
       errorBox.classList.remove('hidden');
+      submitting = false;
+      validate();
     }
   };
 }
