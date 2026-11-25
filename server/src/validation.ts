@@ -116,13 +116,15 @@ export function validateProduct(
     }
 
     const checkPart = db.prepare('SELECT partId FROM parts WHERE partId = ?');
+    const seen = new Set<number>();
     for (const id of b.associatedPartIds) {
       const parsed = parseNumber(id, true);
       if (parsed === null) return { error: 'Associated part IDs must be integers.' };
       const existing = checkPart.get(parsed) as { partId: number } | undefined;
       if (!existing) return { error: 'Associated part IDs must reference existing parts.' };
-      if (!associatedPartIds.includes(parsed)) associatedPartIds.push(parsed);
+      seen.add(parsed);
     }
+    associatedPartIds.push(...seen);
   }
 
   return { product: { name, price, inStock, min, max }, associatedPartIds };
