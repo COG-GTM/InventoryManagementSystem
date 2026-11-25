@@ -288,6 +288,7 @@ test('adding the same part to a product twice is blocked', async ({ page }) => {
   const productName = `Shelf${suffix}`;
 
   await addPart(page, { name: partName, inStock: '4', price: '0.25', min: '1', max: '10', kind: 'Outsourced', variable: 'Acme' });
+  await expect(partsPanel(page).locator('tbody tr').filter({ hasText: partName })).toBeVisible();
 
   await productsPanel(page).getByRole('button', { name: 'Add' }).click();
   const m = modal(page);
