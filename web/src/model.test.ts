@@ -51,11 +51,14 @@ describe('numeric text', () => {
   it('accepts plain decimal integers only', () => {
     expect(isIntegerText(' 42 ')).toBe(true);
     expect(isIntegerText('-3')).toBe(true);
+    expect(isIntegerText('5.0')).toBe(true);
+    expect(isIntegerText('.0')).toBe(true);
     for (const v of ['0x10', '1e3', '1.5', '', 'abc']) expect(isIntegerText(v)).toBe(false);
   });
 
   it('accepts plain decimal prices only', () => {
     expect(isDecimalText('25.25')).toBe(true);
+    for (const v of ['.5', '12.', '-0.75']) expect(isDecimalText(v)).toBe(true);
     for (const v of ['0x10', '1e3', 'Infinity', '']) expect(isDecimalText(v)).toBe(false);
   });
 });
