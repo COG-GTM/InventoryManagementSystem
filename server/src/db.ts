@@ -107,3 +107,23 @@ export function getProductWithParts(db: DB, productId: number): Product | null {
 
   return { ...product, associatedParts: parts.map(partRowToPart) };
 }
+
+export function attachAssociatedParts(db: DB, products: ProductRow[]): Product[] {
+  if (products.length === 0) return [];
+
+  const rows = db.prepare(`
+    SELECT pp.productId AS linkProductId, p.* FROM product_parts pp
+    JOIN parts p ON p.partId = pp.partId
+    WHERE pp.productId IN (SELECT value FROM json_each(?))
+    ORDER BY pp.productId, p.partId
+  `).all(JSON.stringify(products.map((product) => product.productId))) as Array<PartRow & { linkProductId: number }>;
+
+  const partsByProduct = new Map<number, Part[]>();
+  for (const { linkProductId, ...row } of rows) {
+    const list = partsByProduct.get(linkProductId);
+    if (list) list.push(partRowToPart(row));
+    else partsByProduct.set(linkProductId, [partRowToPart(row)]);
+  }
+
+  return products.map((product) => ({ ...product, associatedParts: partsByProduct.get(product.productId) ?? [] }));
+}
