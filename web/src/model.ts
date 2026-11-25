@@ -183,14 +183,15 @@ export const productsApi = {
   remove: (id: number) => apiRequest<void>(`/api/products/${id}`, { method: 'DELETE' }),
 };
 
-export const isDecimalText = (v: string): boolean => /^[+-]?(\d+\.?\d*|\.\d+)$/.test(v.trim());
+export const isDecimalText = (v: string): boolean => /^[+-]?(\d+(\.\d*)?|\.\d+)$/.test(v.trim());
 export const isIntegerText = (v: string): boolean => isDecimalText(v) && Number.isInteger(Number(v.trim()));
 
 // Validation ported from the save handlers: min <= max, and min <= inventory <= max.
 export function validateItem(v: FieldValues): string | null {
-  const min = parseInt(v.min, 10);
-  const max = parseInt(v.max, 10);
-  const inv = parseInt(v.inventory, 10);
+  const num = (s: string) => (s.trim() === '' ? NaN : Number(s));
+  const min = num(v.min);
+  const max = num(v.max);
+  const inv = num(v.inventory);
   if (min > max) return 'Minimum must be less than maximum.';
   if (inv > max || inv < min) return 'Inventory must be between minimum and maximum.';
   return null;

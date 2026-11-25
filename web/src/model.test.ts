@@ -52,6 +52,7 @@ describe('numeric text', () => {
     expect(isIntegerText(' 42 ')).toBe(true);
     expect(isIntegerText('-3')).toBe(true);
     expect(isIntegerText('5.0')).toBe(true);
+    expect(isIntegerText('.0')).toBe(true);
     for (const v of ['0x10', '1e3', '1.5', '', 'abc']) expect(isIntegerText(v)).toBe(false);
   });
 

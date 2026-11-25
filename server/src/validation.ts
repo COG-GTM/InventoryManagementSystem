@@ -10,7 +10,7 @@ function parseString(value: unknown): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
-const DECIMAL_PATTERN = /^[+-]?(\d+\.?\d*|\.\d+)$/;
+const DECIMAL_PATTERN = /^[+-]?(\d+(\.\d*)?|\.\d+)$/;
 
 function parseNumber(value: unknown, integerOnly: boolean): number | null {
   if (typeof value === 'number') {
