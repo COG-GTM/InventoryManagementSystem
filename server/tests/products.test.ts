@@ -167,6 +167,7 @@ describe('Products API', () => {
     const base = { price: 10, inStock: 5, min: 1, max: 10 };
     await request(app).post('/api/products').send({ ...base, name: 'Kit A', associatedPartIds: [3, 1] });
     await request(app).post('/api/products').send({ ...base, name: 'Kit B', associatedPartIds: [2] });
+    await request(app).delete('/api/parts/3').expect(204);
 
     for (const search of ['', 'kit']) {
       const list = await request(app).get(`/api/products${search ? `?search=${search}` : ''}`);
