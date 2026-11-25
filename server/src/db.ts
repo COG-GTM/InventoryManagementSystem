@@ -53,8 +53,6 @@ function createTables(db: DB): void {
 }
 
 function seedIfEmpty(db: DB): void {
-  if (db.pragma('user_version', { simple: true }) !== 0) return;
-  db.pragma('user_version = 1');
   const { total } = db.prepare('SELECT COUNT(*) AS total FROM parts').get() as { total: number };
   if (total > 0) return;
 
